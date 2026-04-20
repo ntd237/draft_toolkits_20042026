@@ -79,11 +79,12 @@ Thư mục `.claude/commands` hiện có 7 command chính:
 
 ### 2. Codex skills
 
-Thư mục `.codex/skills` hiện có 3 skill chuyên biệt:
+Thư mục `.codex/skills` hiện có 4 skill chuyên biệt:
 
 | Skill | Vai trò |
 | --- | --- |
 | `convert-model` | Chọn và hướng dẫn đường chuyển đổi model phù hợp với runtime/hardware |
+| `english-exam-solver` | Giải đề tiếng Anh, TOEIC, IELTS với quy trình phân tích kỹ, loại trừ đáp án sai và giữ độ chính xác cao |
 | `exam-listening-verbatim` | Chép nguyên văn audio listening kiểu IELTS/TOEIC/TOEFL |
 | `yolo-dataset-bootstrap` | Thiết kế pipeline bootstrap dataset YOLO bằng seed set, auto-label và QA |
 
@@ -178,6 +179,8 @@ draft_toolkits_20042026/
 │       │   └── references/
 │       │       ├── quantization-and-shape-pitfalls.md
 │       │       └── runtime-selection-matrix.md
+│       ├── english-exam-solver/
+│       │   └── SKILL.md
 │       ├── exam-listening-verbatim/
 │       │   ├── SKILL.md
 │       │   └── agents/
@@ -208,6 +211,7 @@ draft_toolkits_20042026/
 
 ```text
 - Thử `convert-model` khi muốn kiểm tra một prompt chuyển đổi model có đủ sát hardware/runtime hay chưa.
+- Thử `english-exam-solver` khi muốn test một workflow giải đề tiếng Anh, TOEIC hoặc IELTS theo kiểu phân tích chặt và kiểm chứng đáp án.
 - Thử `exam-listening-verbatim` khi muốn kiểm tra workflow transcript nguyên văn.
 - Thử `yolo-dataset-bootstrap` khi muốn test một playbook annotation thực chiến.
 ```
