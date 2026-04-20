@@ -1,0 +1,7 @@
+interface:
+  display_name: "Model Conversion Strategy"
+  short_description: "Choose the right model export path"
+  default_prompt: "Use $convert-model to choose the safest and most suitable model conversion path for my hardware, runtime, and deployment constraints."
+
+policy:
+  allow_implicit_invocation: true

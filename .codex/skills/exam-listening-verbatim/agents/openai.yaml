@@ -1,0 +1,7 @@
+interface:
+  display_name: "Exact Exam Audio Transcript"
+  short_description: "Chép nguyên văn audio IELTS/TOEIC"
+  default_prompt: "Dùng $exam-listening-verbatim để chép nguyên văn file audio listening này, không thêm bớt, không diễn giải, không dịch và không đoán bừa các đoạn nghe không rõ."
+
+policy:
+  allow_implicit_invocation: true

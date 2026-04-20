@@ -1,0 +1,7 @@
+interface:
+  display_name: "YOLO Dataset Bootstrap"
+  short_description: "Bootstrap dataset YOLO lớn bằng auto-labeling"
+  default_prompt: "Dùng $yolo-dataset-bootstrap để thiết kế workflow gán nhãn và review nhanh cho dataset ảnh YOLO của tôi."
+
+policy:
+  allow_implicit_invocation: true
