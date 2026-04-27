@@ -1,62 +1,63 @@
 ---
-description: "Tạo một bản tóm tắt chi tiết về cuộc hội thoại cho đến nay, chú ý kỹ đến các yêu cầu rõ ràng của người dùng và các hành động trước đó của bạn."
+description: "Generate structured conversation summary with analysis-first approach. Captures requests, concepts, files, problems, and tasks."
+type: auto
 ---
 
-Nhiệm vụ của bạn là tạo một bản tóm tắt chi tiết về cuộc hội thoại cho đến nay, chú ý kỹ đến các yêu cầu rõ ràng của người dùng và các hành động trước đó của bạn.
-Bản tóm tắt của bạn phải bao gồm toàn bộ mốc thời gian từ yêu cầu đầu tiên của người dùng trong cuộc hội thoại cho đến thời điểm hiện tại.
-Bạn phải luôn viết bản tóm tắt bằng tiếng Việt.
-Bản tóm tắt này cần phải thấu đáo trong việc nắm bắt các chi tiết kỹ thuật, các mẫu mã nguồn (code patterns) và các quyết định về kiến trúc vốn sẽ rất cần thiết để tiếp tục công việc phát triển mà không làm mất đi ngữ cảnh.
+Your task is to create a detailed summary of the conversation so far, paying close attention to the user's explicit requests and your previous actions.
+Your summary must cover the entire timeline from the first user request in the conversation up to the current moment.
+You must always write the summary in Vietnamese.
+This summary should be thorough in capturing technical details, code patterns, and architectural decisions that would be essential for continuing development work without losing context.
 
-**Thời gian ước tính**: 3-5 phút (tùy thuộc vào độ dài của cuộc hội thoại)
-
----
-
-## Khi nào nên sử dụng lệnh này
-
-**Nên sử dụng khi:**
-- **Cuộc hội thoại dài** và phức tạp (>10 lượt trao đổi)
-- **Cần lưu trữ ngữ cảnh** cho công việc trong tương lai
-- **Chuyển đổi tác vụ** hoặc tạm nghỉ
-- **Người dùng yêu cầu cụ thể** bản tóm tắt
-
-**Không sử dụng cho:**
-- Các cuộc hội thoại ngắn (<5 lượt trao đổi)
-- Các câu hỏi đáp đơn giản không có thay đổi về mã nguồn
+**Estimated Time**: 3-5 minutes (depending on conversation length)
 
 ---
 
-## Các cấp độ tóm tắt
+## When to Use This Command
 
-Chọn mức độ chi tiết phù hợp dựa trên độ phức tạp của cuộc hội thoại:
-1. **Quick Compact (Tối giản nhanh - 5-10 lượt trao đổi):** Tập trung vào Bảng Trạng thái Tệp tin và Các Tác vụ Đang chờ. Bỏ qua các mô tả dài.
-2. **Deep Compact (Tối giản sâu - >10 lượt trao đổi hoặc có các thay đổi kiến trúc phức tạp):** Bản tóm tắt đầy đủ 8 phần bao gồm phân tích kỹ thuật và các sơ đồ tùy chọn.
+**When to use:**
+- **Conversation is long** and complex (>10 exchanges)
+- **Need to preserve context** for future work
+- **Switching tasks** or taking a break
+- **User explicitly requests** summary
+
+**Don't use for:**
+- Short conversations (<5 exchanges)
+- Simple Q&A without code changes
 
 ---
 
-Trước khi đưa ra bản tóm tắt cuối cùng của bạn, hãy viết một phần **Phân tích (Analysis)** để sắp xếp các suy nghĩ của bạn và đảm bảo bạn đã bao quát hết các điểm cần thiết. Trong quá trình phân tích của bạn:
+## Summarization Tiers
 
-1. Phân tích theo trình tự thời gian từng tin nhắn và từng phần của cuộc hội thoại. Đối với mỗi phần, hãy xác định kỹ:
-   - Các yêu cầu và ý định rõ ràng của người dùng
-   - Cách tiếp cận của bạn để xử lý các yêu cầu của người dùng
-   - Các quyết định chính, các khái niệm kỹ thuật và các mẫu mã nguồn (code patterns)
-   - Các chi tiết cụ thể như tên tệp, chữ ký hàm, các chỉnh sửa tệp, v.v.
-   - **Lưu ý về hiệu suất:** Tránh đưa vào "các đoạn mã đầy đủ" trừ khi thực sự quan trọng. Sử dụng các bản so sánh (diff) ngắn gọn hoặc dẫn chiếu số dòng/tên hàm để tiết kiệm token ngữ cảnh.
-2. Kiểm tra lại độ chính xác về kỹ thuật và tính đầy đủ, giải quyết triệt để từng thành phần bắt buộc.
+Choose the appropriate level of detail based on the conversation complexity:
+1. **Quick Compact (5-10 exchanges):** Focus on the File Status Table and Pending Tasks. Skip long descriptions.
+2. **Deep Compact (>10 exchanges or complex architectural changes):** Full 8-section summary including technical analysis and optional diagrams.
 
-Bản tóm tắt của bạn nên bao gồm các phần sau:
+---
 
-1. **Yêu cầu và Ý định Chính:** Ghi lại chi tiết tất cả các yêu cầu và ý định rõ ràng của người dùng.
-2. **Các Khái niệm Kỹ thuật then chốt:** Liệt kê tất cả các khái niệm kỹ thuật, công nghệ và framework quan trọng đã thảo luận.
-3. **Bảng Trạng thái Tệp tin:** Một bảng ngắn gọn hiển thị các tệp đã được tạo, sửa đổi hoặc xóa.
-   | Tên tệp | Trạng thái | Các thay đổi chính |
+Before providing your final summary, write an **Analysis** section to organize your thoughts and ensure you've covered all necessary points. In your analysis process:
+
+1. Chronologically analyze each message and section of the conversation. For each section thoroughly identify:
+   - The user's explicit requests and intents
+   - Your approach to addressing the user's requests
+   - Key decisions, technical concepts and code patterns
+   - Specific details like file names, function signatures, file edits, etc.
+   - **Performance Note:** Avoid including "full code snippets" unless absolutely critical. Use concise diffs or reference line numbers/function names to save context tokens.
+2. Double-check for technical accuracy and completeness, addressing each required element thoroughly.
+
+Your summary should include the following sections:
+
+1. **Primary Request and Intent:** Capture all of the user's explicit requests and intents in detail.
+2. **Key Technical Concepts:** List all important technical concepts, technologies, and frameworks discussed.
+3. **File Status Table:** A concise table showing files created, modified, or deleted.
+   | File Name | Status | Key Changes |
    | :--- | :--- | :--- |
-   | [Tên] | [Đã tạo/Đã sửa/Đã xóa] | [Tóm tắt ngắn gọn] |
-4. **Kiến trúc Dự án (Tùy chọn):** Sử dụng cú pháp **Mermaid** nếu cuộc hội thoại liên quan đến các luồng dữ liệu hoặc thay đổi cấu trúc phức tạp.
-5. **Các thay đổi chi tiết:** Liệt kê các tệp và đoạn mã cụ thể đã được xem xét hoặc sửa đổi. Sử dụng các bản diff ngắn gọn hoặc các đoạn mã tập trung. Bao gồm một bản tóm tắt tại sao mỗi thay đổi lại quan trọng.
-6. **Giải quyết Vấn đề:** Tài liệu hóa các vấn đề đã giải quyết và bất kỳ nỗ lực xử lý sự cố nào đang thực hiện.
-7. **Tác vụ Đang chờ & Bước tiếp theo:** Phác thảo các tác vụ đang chờ và bước tiếp theo ngay lập tức (kèm theo các trích dẫn trực tiếp từ cuộc hội thoại để đảm bảo tính nhất quán trong diễn giải).
-8. **Tóm tắt Bàn giao (Handover):** Một đoạn văn duy nhất tóm tắt "Trạng thái của Dự án" cho một khởi đầu mới.
+   | [Name] | [Created/Modified/Deleted] | [Brief summary] |
+4. **Project Architecture (Optional):** Use **Mermaid** syntax if the conversation involved complex data flows or structure changes.
+5. **Detailed Changes:** Enumerate specific files and code sections examined or modified. Use concise diffs or focused snippets. Include a summary of why each change is important.
+6. **Problem Solving:** Document problems solved and any ongoing troubleshooting efforts.
+7. **Pending Tasks & Next Steps:** Outline pending tasks and the immediate next step (with direct quotes from the conversation to ensure interpretation consistency).
+8. **Handover Summary:** A single paragraph summarizing the "State of the Project" for a fresh start.
 
 ---
 
-Vui lòng cung cấp bản tóm tắt dựa trên cuộc hội thoại cho đến nay, tuân theo cấu trúc này và đảm bảo tính chính xác cũng như sự thấu đáo trong phản hồi của bạn.
+Please provide your summary based on the conversation so far, following this structure and ensuring precision and thoroughness in your response.
