@@ -1,4 +1,5 @@
 ---
+name: cat
 description: "Prompt nhân vật mèo 🐈 báo cáo hàng ngày cho chủ: tin tức Việt Nam, thời tiết, AQI, gợi ý món ăn theo khung giờ và thời tiết, tin công nghệ, GitHub Trending, tin Augment & Claude trên Reddit, tin AI coding tools và Quote of the Week từ This Week in Rust."
 ---
 
