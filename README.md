@@ -44,7 +44,7 @@ Repo này gom các thử nghiệm vào cấu trúc đủ gọn để dễ tìm l
 
 - Nội dung chính: Markdown (`.md`) với front matter mô tả (`name`, `description`)
 - Định dạng skill: `SKILL.md` kèm thư mục `references/` khi cần tài liệu tham chiếu
-- Môi trường mục tiêu: Claude Code, opencode hoặc hệ thống tương tự có hỗ trợ nạp skill từ thư mục
+- Môi trường mục tiêu: Antigravity, Claude Code, opencode hoặc hệ thống tương tự có hỗ trợ nạp skill từ thư mục
 - Ngôn ngữ giao tiếp mặc định trong nhiều prompt: tiếng Việt
 
 ## Tính năng nổi bật
@@ -74,7 +74,7 @@ Xác nhận clone thành công bằng cách liệt kê các skill hiện có:
 ls .agents/skills
 ```
 
-Kết quả mong đợi: 5 skill gồm `cat`, `convert-model`, `english-exam-solver`, `exam-listening-verbatim`, `security-scan`.
+Kết quả mong đợi: 6 skill gồm `cat`, `convert-model`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `security-scan`.
 
 ## Sử dụng
 
@@ -92,9 +92,10 @@ Kết quả mong đợi: 5 skill gồm `cat`, `convert-model`, `english-exam-sol
 | `.agents/skills/convert-model` | `convert-model` | Lập kế hoạch chuyển đổi model ML/DL giữa các runtime (ONNX, TensorRT, OpenVINO, TFLite, Core ML, RKNN...) và xếp hạng các đường chuyển đổi khả thi |
 | `.agents/skills/english-exam-solver` | `english-exam-solver` | Giải đề tiếng Anh, TOEIC, IELTS với quy trình phân tích kỹ, loại trừ đáp án sai và giữ độ chính xác cao |
 | `.agents/skills/exam-listening-verbatim` | `exam-listening-verbatim` | Chép nguyên văn audio listening kiểu IELTS/TOEIC/TOEFL, không tóm tắt, không dịch, không sửa |
+| `.agents/skills/novel-summarizer` | `novel-summarizer` | Đọc và tóm tắt chi tiết, chính xác nội dung từng chương và dải chương tiểu thuyết (web novel, kiếm hiệp, tiên hiệp, huyền huyễn, light novel) từ đường link hoặc dải URL yêu cầu |
 | `.agents/skills/cat` | `cat` | Prompt nhân vật mèo báo cáo tin tức hàng ngày: thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin AI coding tools |
 
-Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template).
+Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template) hay `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix.
 
 ### 3. Khi có bản ổn, đem đi dùng
 
@@ -118,7 +119,7 @@ Chi tiết cơ chế nạp phụ thuộc vào runtime bạn đang dùng. Repo n�
 ### Ví dụ 2: Viết prompt nháp rồi nâng cấp thành skill
 
 ```text
-1. Soạn prompt mới trong `draft_prompts/` (ví dụ hiện có: `cat.md`).
+1. Soạn prompt mới trong `draft_prompts/` (ví dụ: `my-prompt.md`).
 2. Test nhiều vòng, ghi output và nhận xét vào `draft_output/`.
 3. Khi prompt đủ ổn, đóng gói thành `SKILL.md` kèm front matter `name` + `description`.
 4. Đặt vào `.agents/skills/<tên-skill>/`.
@@ -141,16 +142,23 @@ draft_toolkits_20042026/
 │       │   └── SKILL.md
 │       ├── exam-listening-verbatim/
 │       │   └── SKILL.md
+│       ├── novel-summarizer/
+│       │   └── SKILL.md
 │       └── security-scan/
 │           ├── SKILL.md
 │           └── references/
 │               ├── 01-recon-and-scope.md
-│               ├── ...
+│               ├── 02-secrets-and-data-exposure.md
+│               ├── 03-injection-and-input.md
+│               ├── 04-auth-crypto-session.md
+│               ├── 05-config-and-infra.md
+│               ├── 06-dependencies-supply-chain.md
+│               ├── 07-tooling-by-language.md
 │               └── 08-report-template.md
-├── draft_output/          # đang trống, chờ các vòng test
-├── draft_prompts/
-│   └── cat.md             # bản nháp prompt cat daily briefing
+├── draft_output/          # thư mục lưu output các vòng test
+├── draft_prompts/         # thư mục soạn thảo prompt nháp
 ├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
