@@ -74,7 +74,7 @@ Xác nhận clone thành công bằng cách liệt kê các skill hiện có:
 ls .agents/skills
 ```
 
-Kết quả mong đợi: 6 skill gồm `cat`, `convert-model`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `security-scan`.
+Kết quả mong đợi: 8 skill gồm `business-analyst`, `cat`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `security-scan`.
 
 ## Sử dụng
 
@@ -88,12 +88,14 @@ Kết quả mong đợi: 6 skill gồm `cat`, `convert-model`, `english-exam-sol
 
 | Vị trí | Skill | Vai trò |
 | --- | --- | --- |
+| `.agents/skills/business-analyst` | `business-analyst` | Phân tích nghiệp vụ và kiến trúc giải pháp cho Web, Mobile, Game, AI (CV, NLP/LLM, GenAI, ML): biến ý tưởng thô thành workflow nghiệp vụ, use case, sơ đồ Mermaid, business rules, edge cases, acceptance criteria và kiến trúc hệ thống |
 | `.agents/skills/security-scan` | `security-scan` | Quét bảo mật read-only cho project: phát hiện OWASP Top 10, hardcoded secrets, dependency lỗ hổng, config không an toàn; xuất báo cáo xếp hạng severity kèm khuyến nghị khắc phục |
 | `.agents/skills/convert-model` | `convert-model` | Lập kế hoạch chuyển đổi model ML/DL giữa các runtime (ONNX, TensorRT, OpenVINO, TFLite, Core ML, RKNN...) và xếp hạng các đường chuyển đổi khả thi |
 | `.agents/skills/english-exam-solver` | `english-exam-solver` | Giải đề tiếng Anh, TOEIC, IELTS với quy trình phân tích kỹ, loại trừ đáp án sai và giữ độ chính xác cao |
 | `.agents/skills/exam-listening-verbatim` | `exam-listening-verbatim` | Chép nguyên văn audio listening kiểu IELTS/TOEIC/TOEFL, không tóm tắt, không dịch, không sửa |
 | `.agents/skills/novel-summarizer` | `novel-summarizer` | Đọc và tóm tắt chi tiết, chính xác nội dung từng chương và dải chương tiểu thuyết (web novel, kiếm hiệp, tiên hiệp, huyền huyễn, light novel) từ đường link hoặc dải URL yêu cầu |
-| `.agents/skills/cat` | `cat` | Prompt nhân vật mèo báo cáo tin tức hàng ngày: thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin AI coding tools |
+| `.agents/skills/cat` | `cat` | Prompt nhân vật mèo 🐈 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin AI coding tools |
+| `.agents/skills/dog` | `dog` | Prompt nhân vật cún/chó 🐕 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin Augment & Claude trên Reddit, tin AI coding tools, Quote of the Week từ This Week in Rust |
 
 Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template) hay `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix.
 
@@ -131,6 +133,8 @@ Chi tiết cơ chế nạp phụ thuộc vào runtime bạn đang dùng. Repo n�
 draft_toolkits_20042026/
 ├── .agents/
 │   └── skills/
+│       ├── business-analyst/
+│       │   └── SKILL.md
 │       ├── cat/
 │       │   └── SKILL.md
 │       ├── convert-model/
@@ -138,6 +142,8 @@ draft_toolkits_20042026/
 │       │   └── references/
 │       │       ├── quantization-and-shape-pitfalls.md
 │       │       └── runtime-selection-matrix.md
+│       ├── dog/
+│       │   └── SKILL.md
 │       ├── english-exam-solver/
 │       │   └── SKILL.md
 │       ├── exam-listening-verbatim/
@@ -162,7 +168,7 @@ draft_toolkits_20042026/
 └── README.md
 ```
 
-> Ghi chú: repo còn chứa một số thư mục khác không nằm trong phạm vi tài liệu này.
+> Ghi chú: repo có thể chứa thêm một số thư mục khác ngoài working copy (ví dụ `docs/`, `collection/`, `draft_output/`) nhưng chúng nằm trong `.gitignore` hoặc chỉ tồn tại cục bộ, không thuộc phạm vi tài liệu này.
 
 ## Quy ước nội dung
 
