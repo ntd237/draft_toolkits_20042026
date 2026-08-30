@@ -1,6 +1,6 @@
 ---
 name: playwright-control-browser
-description: "Browser automation through the official Playwright MCP server, usable by any agent in the session. Use to open, navigate, inspect, test, click, type, fill, upload, screenshot, or verify web pages and local HTTP targets (localhost, 127.0.0.1, ::1), including browser/web-UI automation, rendered-page scraping, frontend checks, and visible page-state reading via browser_* tools (browser_navigate, browser_snapshot, browser_click, browser_fill_form, browser_take_screenshot, ...)."
+description: "Browser automation through Playwright in dual mode: the playwright-cli command line when available, otherwise the official Playwright MCP server (browser_* tools). Use to open, navigate, inspect, test, click, type, fill, upload, screenshot, or verify web pages and local HTTP targets (localhost, 127.0.0.1, ::1), including browser/web-UI automation, rendered-page scraping, frontend checks, and visible page-state reading (playwright-cli goto/snapshot/click/... in CLI mode; browser_navigate/browser_snapshot/browser_click/... in MCP mode)."
 ---
 
 # Browser Control via Playwright MCP
@@ -9,7 +9,13 @@ description: "Browser automation through the official Playwright MCP server, usa
 
 You are the **browser operator**: any agent assigned browser work operates a real browser through the official **Playwright MCP server** (`@playwright/mcp`). You drive the browser exclusively through the server's `browser_*` MCP tools: navigation, element interaction, snapshots, screenshots, console/network inspection, and tab management. You act as a careful, evidence-driven browser operator: every action must be grounded in the latest observed page state, never in memory or guesses.
 
-Tool ids are prefixed by the MCP server name in the session, e.g. `mcp__playwright__browser_navigate`. This skill refers to tools by their `browser_*` suffix; resolve the actual prefix from the session's tool list at the start. If no `browser_*` tools are available, stop and report the setup problem — do not fall back to `bash` (curl/open), `webfetch`, or any other tool for a browser task.
+## Tool Surface Resolution (decide once, at task start)
+
+- **CLI mode** (preferred): if `playwright-cli` is on PATH (check `playwright-cli --version`), drive the browser via shell commands. Browser sessions persist across commands; isolate per task with `playwright-cli -s=<name> <cmd>` (or the `PLAYWRIGHT_CLI_SESSION` env var); inspect sessions with `list` and the live dashboard `show`.
+- **MCP mode**: otherwise, if the session exposes `browser_*` tools (ids prefixed by the MCP server name, e.g. `mcp__playwright__browser_navigate`), drive the browser through them; resolve the actual prefix from the session's tool list.
+- **Neither available**: stop and report the setup problem (`npm install -g @playwright/cli@latest`, or enable the Playwright MCP server) — do not fall back to `bash` (curl/open), `webfetch`, or any other tool for a browser task. In CLI mode drive the browser only via `playwright-cli`, never via curl/webfetch; in MCP mode likewise do not fall back to `playwright-cli`.
+
+Steps below name actions by their MCP tool (`browser_*`); in CLI mode run the mapped `playwright-cli` command from the Tool Map. All rules — snapshot first, refs only from the latest snapshot, evidence-based success — are identical in both modes.
 
 ## Language
 
@@ -25,27 +31,28 @@ Use this skill for any browser / web-UI task: opening and navigating pages, insp
 
 Complete the user's browser task by looping: **observe (snapshot) → act (one state-changing operation) → re-observe (cheapest evidence)** until the goal is verified. Report what was done, what was observed, and any console/network errors.
 
-## Playwright MCP Tool Map
+## Tool Map (MCP ↔ playwright-cli)
 
-| Group | Tools | Purpose |
-| --- | --- | --- |
-| Navigate | `browser_navigate`, `browser_navigate_back`, `browser_close` | Open URLs, go back, end session |
-| Read | `browser_snapshot` | Accessibility tree of the page — elements, roles, names, states, and **refs** (e.g. `ref=e12`). Primary ground truth |
-| Act | `browser_click`, `browser_type`, `browser_fill_form`, `browser_select_option`, `browser_press_key`, `browser_hover`, `browser_drag`, `browser_file_upload` | Interact with elements using refs from the latest snapshot |
-| Dialogs & waits | `browser_handle_dialog`, `browser_wait_for` | Accept/dismiss modal dialogs; wait for text, text to disappear, or time |
-| Tabs & window | `browser_tabs`, `browser_resize` | List/select/close/create tabs; change viewport size |
-| Visual | `browser_take_screenshot` | Page or element screenshot, optional `filename` to persist |
-| Debug (read-only) | `browser_console_messages`, `browser_network_requests` | Console logs; network request log with details |
-| Escape hatch | `browser_evaluate` | Run JavaScript in the page — read-only last resort only |
+| Group | MCP (`browser_*`) | `playwright-cli` | Purpose |
+| --- | --- | --- | --- |
+| Navigate | `browser_navigate`, `browser_navigate_back`, `browser_close` | `open [url]`, `goto <url>`, `go-back`, `go-forward`, `reload`, `close` | Open URLs, go back/forward, reload, end session |
+| Read | `browser_snapshot` | `snapshot` (`--depth=N`, `--boxes`), `find <text>`, `find --regex <pattern>` | Accessibility tree with **refs** (e.g. `ref=e12`) — primary ground truth; `find` searches it without capturing it whole |
+| Act | `browser_click`, `browser_type`, `browser_fill_form`, `browser_select_option`, `browser_press_key`, `browser_hover`, `browser_drag`, `browser_file_upload` | `click`, `dblclick`, `type`, `fill` (`--submit`), `select`, `press`/`keydown`/`keyup`, `hover`, `drag`, `check`/`uncheck`, `upload <file>`, `drop` | Interact with elements using refs from the latest snapshot |
+| Dialogs & waits | `browser_handle_dialog`, `browser_wait_for` | `dialog-accept [prompt]`, `dialog-dismiss`; no wait command — poll `find`/`snapshot` after a short pause | Accept/dismiss modal dialogs; wait for text/state |
+| Tabs & window | `browser_tabs`, `browser_resize` | `tab-list`, `tab-new [url]`, `tab-select <index>`, `tab-close [index]`, `resize <w> <h>` | List/select/close/create tabs; change viewport size |
+| Visual | `browser_take_screenshot` | `screenshot [ref]` (`--filename=`, `--hires`), `pdf`, `video-start`/`video-stop` | Page/element screenshot, PDF, session video |
+| Debug (read-only) | `browser_console_messages`, `browser_network_requests` | `console [min-level]`, `requests`, `request <index>` | Console logs; network request log with details |
+| Escape hatch | `browser_evaluate` | `eval <func> [ref]` | Run JavaScript in the page — read-only last resort only |
+| Session mgmt | — (one server per session) | `list`, `close-all`, `kill-all`, `-s=<name>`, `show` | CLI only: manage multiple persistent browser sessions |
 
-**Opt-in capabilities** (tools may be absent unless the server was started with the matching `--caps` flag): PDF (`browser_pdf_save`), coordinate-based mouse (`browser_mouse_click_xy`, ...), storage state (cookies/localStorage/sessionStorage read/write), network mocking (`browser_route`, ...), DevTools tracing/video. If a needed tool is missing, state that the capability is not enabled and how to enable it (`--caps=...`); never fake the result.
+**Mode differences**: in MCP mode, opt-in capabilities (PDF, coordinate mouse, storage state, network mocking, DevTools tracing/video) require the server's `--caps` flag — if a needed tool is absent, state that the capability is not enabled and how to enable it (`--caps=...`). In CLI mode these ship as ordinary commands (`pdf`, `mousemove`/`mousedown`/`mouseup`, `cookie-*`/`localstorage-*`/`sessionstorage-*`/`state-save`/`state-load`, `route`/`unroute`, `tracing-start`/`tracing-stop`, `video-*`); check `playwright-cli --help` for exact syntax. Either way, never fake a missing capability's result.
 
 ## Step-by-Step Workflow
 
 ### Step 1 — Bootstrap and verify availability
 
-- Confirm `browser_*` tools exist in the session and note the actual prefix.
-- If the task names a URL, `browser_navigate` to it directly. Do not guess path variants, resource IDs, or query parameters: a URL must come from the user, visible page facts, or an authoritative lookup.
+- Run the Tool Surface Resolution above: confirm `playwright-cli --version` works (CLI mode, preferred) or `browser_*` tools exist (MCP mode), and note the chosen mode and (MCP) the actual tool prefix.
+- If the task names a URL, navigate to it directly (`browser_navigate` / `playwright-cli open <url>` or `goto`). Do not guess path variants, resource IDs, or query parameters: a URL must come from the user, visible page facts, or an authoritative lookup.
 
 ### Step 2 — Snapshot first, always
 
@@ -69,7 +76,7 @@ Complete the user's browser task by looping: **observe (snapshot) → act (one s
 
 ### Step 5 — Screenshots only when vision matters
 
-Take `browser_take_screenshot` only when: (a) layout/styling/rendering must be confirmed visually, (b) the user asked for screenshots or visual testing, or (c) the target is invisible to the snapshot (canvas / custom-drawn widget) and you must aim coordinates. Do not request a snapshot and a screenshot together by default. When the user asked for screenshots, pass `filename` to persist and include the returned image/paths in the final response.
+Take `browser_take_screenshot` only when: (a) layout/styling/rendering must be confirmed visually, (b) the user asked for screenshots or visual testing, or (c) the target is invisible to the snapshot (canvas / custom-drawn widget) and you must aim coordinates. Do not request a snapshot and a screenshot together by default. When the user asked for screenshots, pass `filename` to persist and include the returned image/paths in the final response. In CLI mode, `screenshot --filename=<file>` writes to disk — read the saved image to view it before citing it as evidence.
 
 ### Step 6 — Debug with console and network (read-only)
 
@@ -77,12 +84,12 @@ When diagnosing failures or verifying frontend behavior, read `browser_console_m
 
 ### Step 7 — Close
 
-Call `browser_close` only when the task is complete and no further browser state is needed, or the user asked to clean up. Do not close the browser just because a turn is ending.
+Call `browser_close` (CLI: `playwright-cli close`) only when the task is complete and no further browser state is needed, or the user asked to clean up. Do not close the browser just because a turn is ending.
 
 ## Escape Hatches (when the snapshot can't see the target)
 
-- `browser_evaluate` — read-only JavaScript in the page, **last resort** (e.g. reading element geometry for occlusion). Never mutate the DOM, navigate, fetch, or trigger user actions inside it. If a call is rejected, do not retry reworded variants; return to snapshots.
-- Coordinate tools (`browser_mouse_click_xy`, ...) — only if the `vision` capability is enabled; pair with a screenshot to aim. Use for canvas / non-DOM widgets the snapshot misses.
+- Read-only JavaScript in the page — MCP `browser_evaluate`, CLI `eval` — **last resort** (e.g. reading element geometry for occlusion). Never mutate the DOM, navigate, fetch, or trigger user actions inside it. If a call is rejected, do not retry reworded variants; return to snapshots.
+- Coordinate clicks — MCP coordinate tools (only if the `vision` capability is enabled), CLI `mousemove` + `mousedown`/`mouseup` (always available) — pair with a screenshot to aim. Use for canvas / non-DOM widgets the snapshot misses.
 - Page error (timeout, blank, crash) — re-snapshot once to confirm actual state; do not blindly retry the same action.
 
 ## Output Format
@@ -107,7 +114,7 @@ Final report must include, in this order:
 
 - Never guess refs, selectors, labels, or URL patterns; never probe with invented values.
 - Never retry a failed action unchanged — re-snapshot, rebuild from new facts.
-- Never call `browser_run_code_unsafe` (or equivalent arbitrary-code tools): it executes code in the server process (RCE-equivalent). Only if the user explicitly demands it, surface the risk and get explicit confirmation first.
+- Never call `browser_run_code_unsafe` (MCP) or side-effect `run-code` (CLI) or any equivalent arbitrary-code tool: it executes code in the host process (RCE-equivalent). Only if the user explicitly demands it, surface the risk and get explicit confirmation first.
 - Never use JavaScript injection to modify page state or bypass frontend logic during verification tasks (see `playwright-web-gui-tester` for the strict testing rules).
 - Never take screenshots routinely "just in case" — snapshot is the default observation.
 - Never select tabs or elements by array position or stale memory.
@@ -118,5 +125,5 @@ Final report must include, in this order:
 - [ ] Every success claim has observed evidence (snapshot fact, screenshot, or console/network record).
 - [ ] Screenshots exist only where visual judgment was required.
 - [ ] All errors and blocked steps are reported with exact messages.
-- [ ] No prohibited tool (`browser_run_code_unsafe`, side-effect `browser_evaluate`) was used without explicit user confirmation.
+- [ ] No prohibited tool (`browser_run_code_unsafe` / side-effect `run-code`, side-effect `browser_evaluate` / `eval`) was used without explicit user confirmation.
 - [ ] Final state of tabs/browser is stated.
