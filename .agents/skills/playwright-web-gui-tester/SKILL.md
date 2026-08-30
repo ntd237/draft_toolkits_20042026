@@ -11,6 +11,12 @@ You are a **senior black-box GUI tester**. You test web frontends by acting exac
 
 This skill defines the **testing methodology**. Where the Playwright MCP server's own usage rules conflict with it, the tooling's rules win — but never in a way that violates the black-box principles below.
 
+## Language
+
+- User-facing output follows the active orchestrator's language rules; by default in this toolkit, the test plan, progress notes, and final report are written in **Vietnamese** while internal analysis and tool arguments stay in English. Where no orchestrator is active, respond in the user's language.
+- Quote page text, error messages, and console logs verbatim in their original language — never translate evidence.
+- If an orchestrator skill (e.g. `00-orchestrator`) is active in the session, run this skill as a specialized utility within its routing; this skill defines the testing methodology and does not replace pipeline skills or create execution logs on its own.
+
 ## Core Principles
 
 1. **Pure GUI black-box testing**: Interact only with elements that are visible and operable in the latest `browser_snapshot`, simulating real user behavior. Screenshots and read-only inspection (`browser_snapshot`, read-only `browser_evaluate`) are allowed for verification; side-effect JavaScript injection (mutating DOM/storage, dispatching events, issuing requests) is strictly prohibited.
@@ -21,11 +27,11 @@ This skill defines the **testing methodology**. Where the Playwright MCP server'
 
 ---
 
-## Phase One: Scenario Assessment and Test Planning
+## Phase 1: Scenario Assessment and Test Planning
 
 Choose strategy by the completeness of the information the user provided.
 
-- **Complete information (explicit steps and expected results)** → Skip planning; proceed to Phase Three.
+- **Complete information (explicit steps and expected results)** → Skip planning; proceed to Phase 3.
 - **Partial information (feature/bug description or requirements doc)** → Lightweight planning: (1) clarify the test objective, (2) define acceptance criteria for pass/fail, (3) execute directly without requesting confirmation.
 - **Insufficient information (only a URL or "please test it")** → Complete planning:
   1. **Explore**: `browser_navigate`, take a `browser_snapshot` + screenshot overview; identify page type (form, list, detail, dashboard).
@@ -39,7 +45,7 @@ Choose strategy by the completeness of the information the user provided.
 
 ---
 
-## Phase Two: Test Environment Preparation (When Needed)
+## Phase 2: Test Environment Preparation (When Needed)
 
 Before formal testing, make the feature under test reachable; black-box restrictions do not apply in this phase.
 
@@ -58,7 +64,7 @@ Before formal testing, make the feature under test reachable; black-box restrict
 
 ---
 
-## Phase Three: Test Execution — Action → Observation loop
+## Phase 3: Test Execution — Action → Observation loop
 
 ### Permitted tools
 
@@ -133,7 +139,7 @@ Register console reading from the start (read-only, so it preserves black-box va
 
 ---
 
-## Phase Four: Output Test Conclusions
+## Phase 4: Output Test Conclusions
 
 Summarize from every recorded observation:
 
@@ -146,12 +152,6 @@ Summarize from every recorded observation:
 
 - If the user specified report requirements (target file, format, language), follow them strictly.
 - Otherwise output an interleaved Markdown report (text + images) directly: reference screenshots with standard Markdown image syntax using the real artifact path returned at runtime or its `file:///` URI, e.g. `![login screenshot](file:///<actual-screenshot-path>/t1_login.png)`. Do not invent paths, do not output bare file paths only, and do not gather all screenshots at the end.
-
-## Language
-
-- User-facing output follows the active orchestrator's language rules; by default in this toolkit, the test plan, progress notes, and final report are written in **Vietnamese** while internal analysis and tool arguments stay in English. Where no orchestrator is active, respond in the user's language.
-- Quote page text, error messages, and console logs verbatim in their original language — never translate evidence.
-- If an orchestrator skill (e.g. `00-orchestrator`) is active in the session, run this skill as a specialized utility within its routing; this skill defines the testing methodology and does not replace pipeline skills or create execution logs on its own.
 
 ## Important Rules
 

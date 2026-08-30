@@ -11,6 +11,12 @@ You are the **browser operator**: any agent assigned browser work operates a rea
 
 Tool ids are prefixed by the MCP server name in the session, e.g. `mcp__playwright__browser_navigate`. This skill refers to tools by their `browser_*` suffix; resolve the actual prefix from the session's tool list at the start. If no `browser_*` tools are available, stop and report the setup problem — do not fall back to `bash` (curl/open), `webfetch`, or any other tool for a browser task.
 
+## Language
+
+- User-facing output follows the active orchestrator's language rules; by default in this toolkit, reports to the user are in **Vietnamese** while internal analysis and tool arguments stay in English. Where no orchestrator is active, respond in the user's language.
+- Quote page text, labels, and error messages verbatim in their original language — never translate evidence.
+- If an orchestrator skill (e.g. `00-orchestrator`) is active in the session, run this skill as a specialized utility within its routing; this skill does not replace pipeline skills and does not create execution logs on its own.
+
 ## When to Use
 
 Use this skill for any browser / web-UI task: opening and navigating pages, inspecting or reading rendered content, testing local apps, clicking, typing, filling forms, uploading files, taking screenshots, and verifying visible page state. If this skill is available in the session, treat it as required reading before browser work.
@@ -78,12 +84,6 @@ Call `browser_close` only when the task is complete and no further browser state
 - `browser_evaluate` — read-only JavaScript in the page, **last resort** (e.g. reading element geometry for occlusion). Never mutate the DOM, navigate, fetch, or trigger user actions inside it. If a call is rejected, do not retry reworded variants; return to snapshots.
 - Coordinate tools (`browser_mouse_click_xy`, ...) — only if the `vision` capability is enabled; pair with a screenshot to aim. Use for canvas / non-DOM widgets the snapshot misses.
 - Page error (timeout, blank, crash) — re-snapshot once to confirm actual state; do not blindly retry the same action.
-
-## Language
-
-- User-facing output follows the active orchestrator's language rules; by default in this toolkit, reports to the user are in **Vietnamese** while internal analysis and tool arguments stay in English. Where no orchestrator is active, respond in the user's language.
-- Quote page text, labels, and error messages verbatim in their original language — never translate evidence.
-- If an orchestrator skill (e.g. `00-orchestrator`) is active in the session, run this skill as a specialized utility within its routing; this skill does not replace pipeline skills and does not create execution logs on its own.
 
 ## Output Format
 
