@@ -74,7 +74,7 @@ Xác nhận clone thành công bằng cách liệt kê các skill hiện có:
 ls .agents/skills
 ```
 
-Kết quả mong đợi: 8 skill gồm `business-analyst`, `cat`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `security-scan`.
+Kết quả mong đợi: 14 skill gồm 5 skill pipeline `apk-*` (`apk-convert`, `apk-edition-analyzer`, `apk-free2paid`, `apk-paid2free`, `apk-verify-fix`) và 9 skill khác (`business-analyst`, `cat`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `playwright-browser`, `security-scan`).
 
 ## Sử dụng
 
@@ -88,6 +88,12 @@ Kết quả mong đợi: 8 skill gồm `business-analyst`, `cat`, `convert-model
 
 | Vị trí | Skill | Vai trò |
 | --- | --- | --- |
+| `.agents/skills/apk-convert` | `apk-convert` | Orchestrator một lệnh cho pipeline chuyển đổi APK/XAPK free↔paid: điều phối analyzer → convert → verify & auto-fix, xuất bản build debug + release đã sign |
+| `.agents/skills/apk-edition-analyzer` | `apk-edition-analyzer` | Phân tích read-only một APK/XAPK: map ad SDK, feature flags, obfuscation, native libs, tech stack, package info; xuất `analysis.json` cho các converter downstream |
+| `.agents/skills/apk-free2paid` | `apk-free2paid` | Chuyển APK/XAPK bản FREE (có ads, giới hạn feature) thành bản PAID (no ads, unlock premium); xử lý obfuscation, XAPK splits, native libs, sign bằng keystore mới |
+| `.agents/skills/apk-paid2free` | `apk-paid2free` | Chuyển APK/XAPK bản PAID (no ads, full premium) thành bản FREE (có ads, gate premium); inject ad SDK stubs, re-gate premium, xử lý obfuscation và XAPK splits |
+| `.agents/skills/apk-verify-fix` | `apk-verify-fix` | Verify APK đã convert: cài lên device/emulator, smoke test, đọc logcat và tự động fix trong loop cho đến khi install + launch + edition check đều pass |
+| `.agents/skills/playwright-browser` | `playwright-browser` | Điều khiển và test trình duyệt qua Playwright ở hai chế độ — `playwright-cli` shell commands hoặc Playwright MCP server; mở trang, click, điền form, upload, screenshot, scrape và chạy black-box GUI test có bằng chứng thị giác |
 | `.agents/skills/business-analyst` | `business-analyst` | Phân tích nghiệp vụ và kiến trúc giải pháp cho Web, Mobile, Game, AI (CV, NLP/LLM, GenAI, ML): biến ý tưởng thô thành workflow nghiệp vụ, use case, sơ đồ Mermaid, business rules, edge cases, acceptance criteria và kiến trúc hệ thống |
 | `.agents/skills/security-scan` | `security-scan` | Quét bảo mật read-only cho project: phát hiện OWASP Top 10, hardcoded secrets, dependency lỗ hổng, config không an toàn; xuất báo cáo xếp hạng severity kèm khuyến nghị khắc phục |
 | `.agents/skills/convert-model` | `convert-model` | Lập kế hoạch chuyển đổi model ML/DL giữa các runtime (ONNX, TensorRT, OpenVINO, TFLite, Core ML, RKNN...) và xếp hạng các đường chuyển đổi khả thi |
@@ -97,7 +103,7 @@ Kết quả mong đợi: 8 skill gồm `business-analyst`, `cat`, `convert-model
 | `.agents/skills/cat` | `cat` | Prompt nhân vật mèo 🐈 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin AI coding tools |
 | `.agents/skills/dog` | `dog` | Prompt nhân vật cún/chó 🐕 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin Augment & Claude trên Reddit, tin AI coding tools, Quote of the Week từ This Week in Rust |
 
-Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template) hay `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix.
+Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template), `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix, hay `.agents/skills/playwright-browser/references/` gồm 12 file về CLI commands, session management, GUI testing methodology, tracing, video recording và các kỹ thuật Playwright khác.
 
 ### 3. Khi có bản ổn, đem đi dùng
 
@@ -133,34 +139,20 @@ Chi tiết cơ chế nạp phụ thuộc vào runtime bạn đang dùng. Repo n�
 draft_toolkits_20042026/
 ├── .agents/
 │   └── skills/
+│       ├── apk-convert/
+│       ├── apk-edition-analyzer/
+│       ├── apk-free2paid/
+│       ├── apk-paid2free/
+│       ├── apk-verify-fix/
 │       ├── business-analyst/
-│       │   └── SKILL.md
 │       ├── cat/
-│       │   └── SKILL.md
 │       ├── convert-model/
-│       │   ├── SKILL.md
-│       │   └── references/
-│       │       ├── quantization-and-shape-pitfalls.md
-│       │       └── runtime-selection-matrix.md
 │       ├── dog/
-│       │   └── SKILL.md
 │       ├── english-exam-solver/
-│       │   └── SKILL.md
 │       ├── exam-listening-verbatim/
-│       │   └── SKILL.md
 │       ├── novel-summarizer/
-│       │   └── SKILL.md
+│       ├── playwright-browser/
 │       └── security-scan/
-│           ├── SKILL.md
-│           └── references/
-│               ├── 01-recon-and-scope.md
-│               ├── 02-secrets-and-data-exposure.md
-│               ├── 03-injection-and-input.md
-│               ├── 04-auth-crypto-session.md
-│               ├── 05-config-and-infra.md
-│               ├── 06-dependencies-supply-chain.md
-│               ├── 07-tooling-by-language.md
-│               └── 08-report-template.md
 ├── draft_output/          # thư mục lưu output các vòng test
 ├── draft_prompts/         # thư mục soạn thảo prompt nháp
 ├── .gitignore
