@@ -26,3 +26,4 @@ blinds. Audio: coffee machine hiss, lo-fi ambience. Shot on 35mm, cinematic.
 ## Lưu ý riêng
 - Nếu không muốn engine tự sinh chữ trên màn hình → luôn đưa `subtitles/captions` vào negative.
 - Dialogue dài quá 2 câu → tách shot.
+- **Bộ lọc an toàn trẻ em rất nhạy**: prompt có chủ thể là trẻ em kết hợp từ chỉ tiếp xúc thân thể hoặc cô đơn ("hug", "kiss", "lonely", "hold me"…) dễ bị từ chối dù bối cảnh trong sáng. Thay bằng từ tương đương an toàn ("warms me", "sings to me", "gentle care", "being with me") và thêm khung ngữ cảnh "wholesome school celebration/performance". Luôn rà dialogue trong shotlist trước khi nhúng vào prompt.
