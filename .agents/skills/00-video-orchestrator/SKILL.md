@@ -64,6 +64,7 @@ description: "Orchestrator điều phối pipeline sản xuất video AI từ A-
 **Mục tiêu**: Chạy đúng chuỗi skill.
 - Chọn mode theo tham số người dùng đã chốt ở Bước 1.
 - Gọi từng skill đúng thứ tự; sau mỗi skill, kiểm tra artifact đã được ghi ra mới tiếp tục.
+- Sau khi `06-video-prompt-engineer` xong: trình `generate_order` (trong `prompts.json`) cho người dùng trước khi họ bắt đầu generate.
 
 ### Bước 4: Thi hành cổng kiểm soát
 **Mục tiêu**: Không để pipeline chạy lệch.

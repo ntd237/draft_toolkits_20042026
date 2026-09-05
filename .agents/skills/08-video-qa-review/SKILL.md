@@ -27,6 +27,7 @@ Khi được kích hoạt:
 
 ### Bước 1: Thu thập bằng chứng
 - Hỏi người dùng kết quả generate (mô tả từng clip hoặc để file vào `clips/`).
+- Có thể QA từng lô theo `generate_order` trong `prompts.json` — không cần đợi đủ 100% clip; QA sớm giúp phát hiện lỗi ở shot "thiết lập" trước khi người dùng generate phần còn lại.
 - KHÔNG đánh giá khi không có bằng chứng nào — hỏi trước.
 
 ### Bước 2: Kiểm lớp 1 — Khớp nội dung (vs shotlist)

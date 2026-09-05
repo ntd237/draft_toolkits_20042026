@@ -60,3 +60,12 @@ Cột "Mặc định" chỉ là ĐỀ XUẤT trình bày cho người dùng khi 
 
 - Tối đa **3 vòng** fix → generate lại → QA.
 - Vẫn FAILED sau 3 vòng: dừng, báo cáo người dùng kèm danh sách lỗi còn lại.
+
+## 7. Thứ tự generate prompt (Runtime Policy)
+
+`06-video-prompt-engineer` phải xuất thêm trường `generate_order` trong `prompts.json` — thứ tự dán prompt để kết quả tối ưu, theo quy tắc:
+1. **Nhóm theo nhân vật**: mọi shot của cùng nhân vật lặp lại xếp liền nhau và dùng chung seed.
+2. **Shot "thiết lập" chạy trước**: lần xuất hiện quan trọng nhất của nhân vật generate đầu tiên (2–3 lần thử, chọn bản đẹp nhất) để chốt mặt/seed; các shot còn lại của nhân vật tái dùng seed đó.
+3. **Shot mở màn bối cảnh đầu nhóm phụ**: shot wide đủ đội hình/bối cảnh là chuẩn tham chiếu hình ảnh cho các shot nhóm sau.
+4. **Nhân vật phụ xuất hiện 1 lần để sau cùng** — lỗi không ảnh hưởng chuỗi.
+5. **Dừng kiểm giữa chừng**: sau mỗi shot "thiết lập", soi kết quả và sửa prompt trước khi generate phần còn lại — không chạy hàng loạt mù quáng.

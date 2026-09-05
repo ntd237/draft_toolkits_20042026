@@ -21,7 +21,8 @@ Khi được kích hoạt:
 2. Đọc `shotlist.json` và `bible.md` (thiếu một trong hai → dừng, báo lỗi Gate).
 3. Đọc `references/<engine>.md` của skill này theo engine đã chốt trong concept.md.
 4. Sinh prompt cho từng shot theo quy tắc engine + bible.
-5. Tự kiểm rồi ghi `prompts.json`.
+5. Lập `generate_order` — thứ tự dán prompt tối ưu — theo quy tắc mục 7 của config.
+6. Tự kiểm rồi ghi `prompts.json`.
 
 ## 3. Step-by-step Workflow
 
@@ -42,6 +43,7 @@ Khi được kích hoạt:
 ### Bước 3: Sinh negative prompt & tham số
 - Negative prompt mặc định của engine + bổ sung theo shot (méo tay, đổi mặt, text ảo…).
 - Tham số từng shot: `duration_s`, `aspect_ratio`, seed (nếu engine hỗ trợ và muốn khớp giữa các shot).
+- Với nhân vật lặp lại: shot "thiết lập" (lần xuất hiện quan trọng nhất) được generate trước để chốt seed; các shot cùng nhân vật tái dùng seed đó (ghi vào trường `seed` và `notes`).
 
 ### Bước 4: Tự kiểm từng prompt
 - Độ dài ≤ `max_prompt_chars` trong config.
@@ -49,7 +51,10 @@ Khi được kích hoạt:
 - Một shot = một hành động chính (nếu quá tải → gộp báo lại, không tự cắt nội dung script).
 - Không chứa từ cấm/trigger an toàn của engine.
 
-### Bước 5: Ghi artifact
+### Bước 5: Lập generate_order & ghi artifact
+**Mục tiêu**: Người dùng biết dán prompt theo thứ tự nào để kết quả tối ưu.
+- Sắp xếp theo quy tắc mục 7 của config: nhóm theo nhân vật + seed chung → shot "thiết lập" của nhân vật chạy trước → shot wide mở màn bối cảnh đầu nhóm phụ → nhân vật 1-lần-cuối-cùng.
+- Ghi trường `generate_order` vào `prompts.json` theo Output Format.
 - Ghi `docs/video-projects/<project-slug>/prompts.json` theo schema.
 
 ## 4. Output Format — Schema prompts.json
@@ -68,6 +73,9 @@ Khi được kích hoạt:
       "seed": null,
       "notes": "gợi ý generate (số lần thử, keyframe nếu image-to-video)"
     }
+  ],
+  "generate_order": [
+    { "order": 1, "shot_id": "S15", "why": "shot thiết lập CHAR-01 — chốt seed" }
   ]
 }
 ```
@@ -90,4 +98,5 @@ Khi được kích hoạt:
 - [ ] Mỗi prompt có đủ style + subject + action + camera (+ audio nếu hỗ trợ).
 - [ ] Độ dài từng prompt ≤ max_prompt_chars.
 - [ ] Negative prompt có mặt cho mọi shot.
+- [ ] Có `generate_order` — thứ tự hợp lý theo nhân vật/seed, shot thiết lập đứng trước.
 - [ ] Đã ghi `prompts.json`.
