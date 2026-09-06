@@ -37,7 +37,7 @@ Khi nghịch với AI assistants, prompt và workflow thường xuất hiện r�
 Repo này gom các thử nghiệm vào cấu trúc đủ gọn để dễ tìm lại và tiếp tục chỉnh sửa:
 
 - `.agents/skills/`: nơi lưu các skill đang hoạt động dạng `SKILL.md`, có thể đi kèm `references/`.
-- `other-skills/`: kho nhóm skill theo pipeline chưa kích hoạt (`apk-skills/`, `video-skills/`), copy sang `.agents/skills/` khi muốn dùng.
+- `other-skills/`: kho nhóm skill theo pipeline chưa kích hoạt (`apk-skills/`, `video-skills/`) và skill độc lập (`security-scan/`), copy sang `.agents/skills/` khi muốn dùng.
 - `draft_output/`: nơi lưu output, ghi chú, bản so sánh hoặc kết quả thử nghiệm.
 
 ### Công nghệ và định dạng
@@ -72,10 +72,10 @@ Xác nhận clone thành công bằng cách liệt kê các skill hiện có:
 
 ```bash
 ls .agents/skills
-ls other-skills/apk-skills other-skills/video-skills
+ls other-skills/apk-skills other-skills/video-skills other-skills/security-scan
 ```
 
-Kết quả mong đợi: `.agents/skills` gồm 10 skill đang hoạt động (`business-analyst`, `cat`, `code-search-expert`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `read-only`, `security-scan`); `other-skills` gồm 2 nhóm pipeline: `apk-skills` (5 skill `00-apk-convert` → `04-apk-verify-fix`) và `video-skills` (10 skill `00-video-orchestrator` → `09-assembly-delivery`).
+Kết quả mong đợi: `.agents/skills` gồm 9 skill đang hoạt động (`business-analyst`, `cat`, `code-search-expert`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `read-only`); `other-skills` gồm 2 nhóm pipeline — `apk-skills` (5 skill `00-apk-convert` → `04-apk-verify-fix`) và `video-skills` (10 skill `00-video-orchestrator` → `09-assembly-delivery`) — cùng 1 skill độc lập `security-scan`.
 
 ## Sử dụng
 
@@ -100,7 +100,12 @@ Kết quả mong đợi: `.agents/skills` gồm 10 skill đang hoạt động (`
 | `.agents/skills/exam-listening-verbatim` | `exam-listening-verbatim` | Chép nguyên văn audio listening kiểu IELTS/TOEIC/TOEFL, không tóm tắt, không dịch, không sửa |
 | `.agents/skills/novel-summarizer` | `novel-summarizer` | Đọc và tóm tắt chi tiết, chính xác nội dung từng chương và dải chương tiểu thuyết (web novel, kiếm hiệp, tiên hiệp, huyền huyễn, light novel) từ đường link hoặc dải URL yêu cầu |
 | `.agents/skills/read-only` | `read-only` | Cố vấn AI đa năng và chuyên gia thao tác an toàn cho các AI coding agent: research kỹ thuật sâu, duyệt web, kiểm tra terminal và trả lời các câu hỏi phức tạp |
-| `.agents/skills/security-scan` | `security-scan` | Quét bảo mật read-only cho project: phát hiện OWASP Top 10, hardcoded secrets, dependency lỗ hổng, config không an toàn; xuất báo cáo xếp hạng severity kèm khuyến nghị khắc phục |
+
+**Skill độc lập — `other-skills/security-scan/`:**
+
+| Vị trí | Skill | Vai trò |
+| --- | --- | --- |
+| `other-skills/security-scan` | `security-scan` | Quét bảo mật read-only cho project: phát hiện OWASP Top 10, hardcoded secrets, dependency lỗ hổng, config không an toàn; xuất báo cáo xếp hạng severity kèm khuyến nghị khắc phục |
 
 **Nhóm pipeline APK — `other-skills/apk-skills/`:**
 
@@ -127,7 +132,7 @@ Kết quả mong đợi: `.agents/skills` gồm 10 skill đang hoạt động (`
 | `other-skills/video-skills/08-video-qa-review` | `08-video-qa-review` | Kiểm tra chất lượng clip video AI đã generate: đối chiếu từng clip với shotlist và bible, phát hiện lỗi AI (méo mặt, đổi nhân vật, nhảy logic), chấm PASS/FAILED và đề xuất fix |
 | `other-skills/video-skills/09-assembly-delivery` | `09-assembly-delivery` | Giai đoạn xuất bản: ghép clip (ffmpeg/CapCut/Premiere), chèn VO/nhạc/caption theo audio plan, tạo thumbnail, xuất file đúng spec nền tảng đích |
 
-Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `.agents/skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template), `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix, hay `other-skills/video-skills/06-video-prompt-engineer/references/` gồm 4 file theo từng engine video (Veo 3, Sora, Kling, Runway).
+Skill nào có thư mục `references/` thì đó là tài liệu tham chiếu domain knowledge đi kèm, ví dụ `other-skills/security-scan/references/` gồm 8 file bao quát từng mảng kiểm định (recon, secrets, injection, auth/crypto, config/infra, dependencies, tooling, report template), `.agents/skills/convert-model/references/` gồm 2 file về quantization, tensor shapes và runtime matrix, hay `other-skills/video-skills/06-video-prompt-engineer/references/` gồm 4 file theo từng engine video (Veo 3, Sora, Kling, Runway).
 
 ### 3. Khi có bản ổn, đem đi dùng
 
@@ -171,11 +176,11 @@ draft_toolkits_20042026/
 │       ├── english-exam-solver/
 │       ├── exam-listening-verbatim/
 │       ├── novel-summarizer/
-│       ├── read-only/
-│       └── security-scan/
+│       └── read-only/
 ├── other-skills/
 │   ├── apk-skills/        # 5 skill pipeline chuyển đổi APK free↔paid (00→04)
-│   └── video-skills/      # 10 skill pipeline sản xuất video AI (00→09)
+│   ├── video-skills/      # 10 skill pipeline sản xuất video AI (00→09)
+│   └── security-scan/     # 1 skill audit bảo mật read-only (SKILL.md + 8 references)
 ├── draft_output/          # thư mục lưu output các vòng test
 ├── .gitignore
 ├── LICENSE
@@ -189,7 +194,7 @@ draft_toolkits_20042026/
 - Nhiều skill quy định trả lời bằng tiếng Việt; một số yêu cầu restate yêu cầu bằng tiếng Anh trước khi trả lời tiếng Việt.
 - File skill bắt buộc có front matter mô tả `name` và `description`.
 - Skill chuyên biệt nên đi kèm `references/` khi cần heuristic hoặc domain knowledge tái sử dụng.
-- Skill thử nghiệm mới đặt trong `other-skills/<nhóm>/<tên-skill>/`; chỉ chuyển lên `.agents/skills/<tên-skill>/` khi đã test ổn và cần dùng thường xuyên.
+- Skill thử nghiệm mới đặt trong `other-skills/<tên-skill>/` hoặc `other-skills/<nhóm>/<tên-skill>/`; chỉ chuyển lên `.agents/skills/<tên-skill>/` khi đã test ổn và cần dùng thường xuyên.
 
 ## License
 
