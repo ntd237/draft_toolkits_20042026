@@ -74,7 +74,7 @@ Xác nhận clone thành công bằng cách liệt kê các skill hiện có:
 ls .agents/skills
 ```
 
-Kết quả mong đợi: 14 skill gồm 5 skill pipeline `apk-*` (`apk-convert`, `apk-edition-analyzer`, `apk-free2paid`, `apk-paid2free`, `apk-verify-fix`) và 9 skill khác (`business-analyst`, `cat`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `playwright-browser`, `security-scan`).
+Kết quả mong đợi: 14 skill gồm 5 skill pipeline APK (`00-apk-convert`, `01-apk-edition-analyzer`, `02-apk-free2paid`, `03-apk-paid2free`, `04-apk-verify-fix`) và 9 skill khác (`business-analyst`, `cat`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `playwright-browser`, `security-scan`).
 
 ## Sử dụng
 
@@ -88,11 +88,11 @@ Kết quả mong đợi: 14 skill gồm 5 skill pipeline `apk-*` (`apk-convert`,
 
 | Vị trí | Skill | Vai trò |
 | --- | --- | --- |
-| `.agents/skills/apk-convert` | `apk-convert` | Orchestrator một lệnh cho pipeline chuyển đổi APK/XAPK free↔paid: điều phối analyzer → convert → verify & auto-fix, xuất bản build debug + release đã sign |
-| `.agents/skills/apk-edition-analyzer` | `apk-edition-analyzer` | Phân tích read-only một APK/XAPK: map ad SDK, feature flags, obfuscation, native libs, tech stack, package info; xuất `analysis.json` cho các converter downstream |
-| `.agents/skills/apk-free2paid` | `apk-free2paid` | Chuyển APK/XAPK bản FREE (có ads, giới hạn feature) thành bản PAID (no ads, unlock premium); xử lý obfuscation, XAPK splits, native libs, sign bằng keystore mới |
-| `.agents/skills/apk-paid2free` | `apk-paid2free` | Chuyển APK/XAPK bản PAID (no ads, full premium) thành bản FREE (có ads, gate premium); inject ad SDK stubs, re-gate premium, xử lý obfuscation và XAPK splits |
-| `.agents/skills/apk-verify-fix` | `apk-verify-fix` | Verify APK đã convert: cài lên device/emulator, smoke test, đọc logcat và tự động fix trong loop cho đến khi install + launch + edition check đều pass |
+| `.agents/skills/00-apk-convert` | `00-apk-convert` | Orchestrator một lệnh cho pipeline chuyển đổi APK/XAPK free↔paid: điều phối analyzer → convert → verify & auto-fix, xuất bản build debug + release đã sign |
+| `.agents/skills/01-apk-edition-analyzer` | `01-apk-edition-analyzer` | Phân tích read-only một APK/XAPK: map ad SDK, feature flags, obfuscation, native libs, tech stack, package info; xuất `analysis.json` cho các converter downstream |
+| `.agents/skills/02-apk-free2paid` | `02-apk-free2paid` | Chuyển APK/XAPK bản FREE (có ads, giới hạn feature) thành bản PAID (no ads, unlock premium); xử lý obfuscation, XAPK splits, native libs, sign bằng keystore mới |
+| `.agents/skills/03-apk-paid2free` | `03-apk-paid2free` | Chuyển APK/XAPK bản PAID (no ads, full premium) thành bản FREE (có ads, gate premium); inject ad SDK stubs, re-gate premium, xử lý obfuscation và XAPK splits |
+| `.agents/skills/04-apk-verify-fix` | `04-apk-verify-fix` | Verify APK đã convert: cài lên device/emulator, smoke test, đọc logcat và tự động fix trong loop cho đến khi install + launch + edition check đều pass |
 | `.agents/skills/playwright-browser` | `playwright-browser` | Điều khiển và test trình duyệt qua Playwright ở hai chế độ — `playwright-cli` shell commands hoặc Playwright MCP server; mở trang, click, điền form, upload, screenshot, scrape và chạy black-box GUI test có bằng chứng thị giác |
 | `.agents/skills/business-analyst` | `business-analyst` | Phân tích nghiệp vụ và kiến trúc giải pháp cho Web, Mobile, Game, AI (CV, NLP/LLM, GenAI, ML): biến ý tưởng thô thành workflow nghiệp vụ, use case, sơ đồ Mermaid, business rules, edge cases, acceptance criteria và kiến trúc hệ thống |
 | `.agents/skills/security-scan` | `security-scan` | Quét bảo mật read-only cho project: phát hiện OWASP Top 10, hardcoded secrets, dependency lỗ hổng, config không an toàn; xuất báo cáo xếp hạng severity kèm khuyến nghị khắc phục |
@@ -139,11 +139,11 @@ Chi tiết cơ chế nạp phụ thuộc vào runtime bạn đang dùng. Repo n�
 draft_toolkits_20042026/
 ├── .agents/
 │   └── skills/
-│       ├── apk-convert/
-│       ├── apk-edition-analyzer/
-│       ├── apk-free2paid/
-│       ├── apk-paid2free/
-│       ├── apk-verify-fix/
+│       ├── 00-apk-convert/
+│       ├── 01-apk-edition-analyzer/
+│       ├── 02-apk-free2paid/
+│       ├── 03-apk-paid2free/
+│       ├── 04-apk-verify-fix/
 │       ├── business-analyst/
 │       ├── cat/
 │       ├── convert-model/

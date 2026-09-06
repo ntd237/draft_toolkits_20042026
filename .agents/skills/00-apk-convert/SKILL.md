@@ -1,5 +1,5 @@
 ---
-name: apk-convert
+name: 00-apk-convert
 description: One-command orchestrator for free↔paid APK/XAPK conversion. Drives the full pipeline analyze → convert → verify & auto-fix. Just give one APK/XAPK and a direction; get debug + release builds.
 ---
 
@@ -12,10 +12,10 @@ You are a **Senior Android Release Engineer & Orchestrator**. You coordinate 4 p
 
 | # | Skill | When |
 |---|---|---|
-| 1 | `apk-edition-analyzer` | Phase 1 — map ads, flags, stack, obfuscation, native |
-| 2 | `apk-free2paid` | Phase 2a — free → paid (remove ads, unlock premium) |
-| 3 | `apk-paid2free` | Phase 2b — paid → free (inject ads, re-gate premium) |
-| 4 | `apk-verify-fix` | Phase 3 — install, smoke test, logcat, auto-fix loop |
+| 1 | `01-apk-edition-analyzer` | Phase 1 — map ads, flags, stack, obfuscation, native |
+| 2 | `02-apk-free2paid` | Phase 2a — free → paid (remove ads, unlock premium) |
+| 3 | `03-apk-paid2free` | Phase 2b — paid → free (inject ads, re-gate premium) |
+| 4 | `04-apk-verify-fix` | Phase 3 — install, smoke test, logcat, auto-fix loop |
 
 > **Scope guard:** Only operate on apps the user legally owns. If the user confirms the APK is not theirs, refuse and explain why.
 
@@ -44,20 +44,20 @@ You are a **Senior Android Release Engineer & Orchestrator**. You coordinate 4 p
    - `test account` (optional) — credentials for the S4 login smoke test in verify.
 5. Record resolved options for downstream skills.
 
-### Step 2 — Analyze (delegate to `apk-edition-analyzer`)
+### Step 2 — Analyze (delegate to `01-apk-edition-analyzer`)
 1. Check `work/analyze/analysis.json` — if it exists and is newer than the input file, ask `Reuse or re-analyze?` Otherwise run the analyzer.
-2. Invoke `apk-edition-analyzer` on the input file. Require it to produce `analysis.json` + `REPORT.md`.
+2. Invoke `01-apk-edition-analyzer` on the input file. Require it to produce `analysis.json` + `REPORT.md`.
 3. Load `analysis.json`. Read `editionGuess`, `techStack`, `isObfuscated`, `adsSdks`, `isXapk`.
 4. If `direction == auto`, infer: `free → free2paid`, `paid → paid2free`. Show inference and confirm before proceeding. If inferred direction conflicts with an explicit `direction`, warn and ask for confirmation.
 
-### Step 3 — Convert (delegate to `apk-free2paid` or `apk-paid2free`)
-1. Route: `free2paid` → `apk-free2paid`, `paid2free` → `apk-paid2free`.
+### Step 3 — Convert (delegate to `02-apk-free2paid` or `03-apk-paid2free`)
+1. Route: `free2paid` → `02-apk-free2paid`, `paid2free` → `03-apk-paid2free`.
 2. Pass through: input file, `analysis.json`, resolved `signing` and `package` choices.
 3. The converter must: backup `work/convert-<direction>/original.apk`, patch (ads + premium gates + signature-check handling), rebuild, zipalign, and emit BOTH `dist/app-*-debug-unsigned.apk` and `dist/app-*-release-signed.apk` plus `PATCH_REPORT.md`.
 4. Gate: run `apksigner verify --verbose` on the release artifact. If it fails, stop and report — do NOT advance to verify.
 
-### Step 4 — Verify & Auto-Fix (delegate to `apk-verify-fix`)
-1. Invoke `apk-verify-fix` on the release-signed APK (XAPK: each split).
+### Step 4 — Verify & Auto-Fix (delegate to `04-apk-verify-fix`)
+1. Invoke `04-apk-verify-fix` on the release-signed APK (XAPK: each split).
 2. It must: install via `adb` (or boot an AVD if no device), run S1 no-crash + UI rendered + S2 navigation + S3 edition check (ads hidden for paid, visible for free) + S4 auth smoke test, capture `logcat.txt`.
 3. On failure, the verifier auto-fixes (restore resource/class/`.so`, fix manifest/layout, revert bad branch) and rebuilds — max 5 iterations, `versionCode` +1 each time, reusing the same keystore.
 4. Require `VERIFY_REPORT.md` + `fix-history.md` after.
@@ -120,11 +120,11 @@ work/verify/fix-history.md
 ## Usage Examples
 ```
 # Auto-detect direction from APK
-/apk-convert file: app-free.apk direction: auto
+/00-apk-convert file: app-free.apk direction: auto
 
 # Explicit direction, keep package, new keystore
-/apk-convert file: app-paid.xapk direction: paid2free signing: create-new-keystore package: keep
+/00-apk-convert file: app-paid.xapk direction: paid2free signing: create-new-keystore package: keep
 
 # Resume after fixing ad ID manually — reuses analysis.json
-/apk-convert file: app-free.apk direction: free2paid
+/00-apk-convert file: app-free.apk direction: free2paid
 ```

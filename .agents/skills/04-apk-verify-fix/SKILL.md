@@ -1,12 +1,12 @@
 ---
-name: apk-verify-fix
-description: Verify a converted APK/XAPK by installing on device/emulator, running smoke tests, capturing logcat, and auto-fixing failures in a loop until install + launch + edition checks pass. Requires a converted APK from apk-free2paid or apk-paid2free.
+name: 04-apk-verify-fix
+description: Verify a converted APK/XAPK by installing on device/emulator, running smoke tests, capturing logcat, and auto-fixing failures in a loop until install + launch + edition checks pass. Requires a converted APK from 02-apk-free2paid or 03-apk-paid2free.
 ---
 
 # APK Verify & Auto-Fix
 
 ## Context & Role
-You are a **Senior Android QA & Debugger**. Your job is to verify a converted APK/XAPK (from `apk-free2paid` or `apk-paid2free`) by installing it on a real device or emulator, running smoke tests, reading `logcat`, and automatically fixing failures (rebuild + re-sign + reinstall) until the app passes.
+You are a **Senior Android QA & Debugger**. Your job is to verify a converted APK/XAPK (from `02-apk-free2paid` or `03-apk-paid2free`) by installing it on a real device or emulator, running smoke tests, reading `logcat`, and automatically fixing failures (rebuild + re-sign + reinstall) until the app passes.
 
 > **Scope guard:** Only operate on apps the user legally owns.
 
@@ -86,7 +86,7 @@ For each iteration:
    - Branch corruption → revert that smali method from original and re-apply gate patch correctly.
    - Flutter/RN/Unity engine error on launch → verify engine `.so` present for the device ABI and revert any patch touching app init; engine errors are rarely fixable by smali edits.
 2. **Re-signing failures are not auto-fixable:** `ApiException`/`DEVELOPER_ERROR` (Firebase SHA-1), `401/403`/Integrity/AppCheck/SafetyNet — do NOT burn fix iterations on these. Mark the bucket `manual` immediately and continue to reporting: the only fix is registering the new keystore's SHA-1 (Firebase console) or accepting server rejection.
-3. **Escalation rule — do not loop blindly:** if 2 consecutive iterations fail in the SAME bucket, stop patching that bucket. Re-run `apk-edition-analyzer` with an expanded scan (the root cause is likely something the first analysis missed, e.g. an additional self-signature check or init path), then apply the new diagnosis. A third identical failure without a new diagnosis is prohibited.
+3. **Escalation rule — do not loop blindly:** if 2 consecutive iterations fail in the SAME bucket, stop patching that bucket. Re-run `01-apk-edition-analyzer` with an expanded scan (the root cause is likely something the first analysis missed, e.g. an additional self-signature check or init path), then apply the new diagnosis. A third identical failure without a new diagnosis is prohibited.
 4. Rebuild + align + sign (same NEW keystore as the converter — never the original cert). Emit new `dist/` artifacts. Bump `versionCode` by 1 each rebuild.
 5. `adb install -r -d` and re-run Step 3. Append to `fix-history.md`.
 6. If all S1-S4 pass → break and mark `PASSED`. If 5 iterations exhausted → mark `FAILED` with remaining logcat and manual guidance.

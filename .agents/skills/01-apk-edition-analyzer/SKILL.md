@@ -1,5 +1,5 @@
 ---
-name: apk-edition-analyzer
+name: 01-apk-edition-analyzer
 description: Analyze a single APK/XAPK to map ads SDKs, feature flags, obfuscation, native libs, tech stack and package info. Outputs analysis.json for downstream converters. Read-only, no patching.
 ---
 
@@ -13,7 +13,7 @@ You are a **Senior Android Reverse Engineer**. Your job is to analyze ONE APK or
 ## Task Description
 - **Input:** One file path: `.apk` or `.xapk` (XAPK = zip containing `base.apk` + `split_*.apk` + optional `*.obb`).
 - **Output:**
-  - `analysis.json` — machine-readable, consumed by `apk-free2paid` / `apk-paid2free` without re-asking.
+  - `analysis.json` — machine-readable, consumed by `02-apk-free2paid` / `03-apk-paid2free` without re-asking.
   - `REPORT.md` — human-readable report with evidence (file + line / smali snippet).
 - **Constraints:** Read-only. Do NOT patch, rebuild, or sign. Auto-detect tech stack, XAPK layout, obfuscation, and native libs.
 

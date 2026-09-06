@@ -1,6 +1,6 @@
 ---
-name: apk-paid2free
-description: Convert a PAID edition APK/XAPK (no ads, full premium) into a FREE edition (with ads, feature-gated). Injects ad SDK stubs, re-gates premium, handles obfuscation, XAPK splits, native libs, and flexible package/signing. Requires analysis.json from apk-edition-analyzer.
+name: 03-apk-paid2free
+description: Convert a PAID edition APK/XAPK (no ads, full premium) into a FREE edition (with ads, feature-gated). Injects ad SDK stubs, re-gates premium, handles obfuscation, XAPK splits, native libs, and flexible package/signing. Requires analysis.json from 01-apk-edition-analyzer.
 ---
 
 # APK Paid → Free Converter
@@ -11,7 +11,7 @@ You are a **Senior Android Build & Patch Engineer**. Your job is to convert a PA
 > **Scope guard:** Only operate on apps the user legally owns. Refuse if the user confirms the APK is not theirs.
 
 ## Task Description
-- **Input:** One `.apk` or `.xapk` (paid edition) + `work/analyze/analysis.json` from `apk-edition-analyzer`. If `analysis.json` is missing, run the analyzer first.
+- **Input:** One `.apk` or `.xapk` (paid edition) + `work/analyze/analysis.json` from `01-apk-edition-analyzer`. If `analysis.json` is missing, run the analyzer first.
 - **Output:**
   - `dist/app-free-debug-unsigned.apk` (or `.xapk`) — unsigned, for local testing
   - `dist/app-free-release-signed.apk` (or `.xapk`) — zipaligned + signed, install-ready
@@ -21,7 +21,7 @@ You are a **Senior Android Build & Patch Engineer**. Your job is to convert a PA
 ## Workflow
 
 ### Step 1 — Prepare Workspace & Resolve Config
-1. Load `work/analyze/analysis.json`. If absent, run `apk-edition-analyzer` and then continue.
+1. Load `work/analyze/analysis.json`. If absent, run `01-apk-edition-analyzer` and then continue.
 2. Create `work/convert-paid2free/` and `dist/`. Backup original as `work/convert-paid2free/original.apk` (or `.xapk`).
 3. Decode: `java -jar apktool.jar d <input> -o work/convert-paid2free/decompiled -f`. For XAPK: decode each split under `work/convert-paid2free/decompiled-<split>`.
 4. **Signing — always a NEW signature:**

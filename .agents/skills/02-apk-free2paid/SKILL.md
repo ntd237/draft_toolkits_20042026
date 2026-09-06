@@ -1,6 +1,6 @@
 ---
-name: apk-free2paid
-description: Convert a FREE edition APK/XAPK (with ads, limited features) into a PAID edition (no ads, all premium unlocked). Handles obfuscation, XAPK splits, native libs, and flexible package/signing. Requires analysis.json from apk-edition-analyzer.
+name: 02-apk-free2paid
+description: Convert a FREE edition APK/XAPK (with ads, limited features) into a PAID edition (no ads, all premium unlocked). Handles obfuscation, XAPK splits, native libs, and flexible package/signing. Requires analysis.json from 01-apk-edition-analyzer.
 ---
 
 # APK Free → Paid Converter
@@ -11,7 +11,7 @@ You are a **Senior Android Build & Patch Engineer**. Your job is to convert a FR
 > **Scope guard:** Only operate on apps the user legally owns. Refuse if the user confirms the APK is not theirs.
 
 ## Task Description
-- **Input:** One `.apk` or `.xapk` (free edition) + `work/analyze/analysis.json` from `apk-edition-analyzer`. If `analysis.json` is missing, run the analyzer first.
+- **Input:** One `.apk` or `.xapk` (free edition) + `work/analyze/analysis.json` from `01-apk-edition-analyzer`. If `analysis.json` is missing, run the analyzer first.
 - **Output:**
   - `dist/app-paid-debug-unsigned.apk` (or `.xapk`) — unsigned, for local testing
   - `dist/app-paid-release-signed.apk` (or `.xapk`) — zipaligned + signed, install-ready
@@ -21,7 +21,7 @@ You are a **Senior Android Build & Patch Engineer**. Your job is to convert a FR
 ## Workflow
 
 ### Step 1 — Prepare Workspace & Resolve Config
-1. Load `work/analyze/analysis.json`. If absent, run `apk-edition-analyzer` and then continue.
+1. Load `work/analyze/analysis.json`. If absent, run `01-apk-edition-analyzer` and then continue.
 2. Create `work/convert-free2paid/` and `dist/`. Backup original as `work/convert-free2paid/original.apk` (or `.xapk`).
 3. Decode: `java -jar apktool.jar d <input> -o work/convert-free2paid/decompiled -f`. For XAPK: decode each split under `work/convert-free2paid/decompiled-<split>`.
 4. **Signing — always a NEW signature:**
