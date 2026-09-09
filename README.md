@@ -75,7 +75,7 @@ ls .agents/skills
 ls other-skills/apk-skills other-skills/video-skills other-skills/security-scan
 ```
 
-Kết quả mong đợi: `.agents/skills` gồm 9 skill đang hoạt động (`business-analyst`, `cat`, `code-search-expert`, `convert-model`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `read-only`); `other-skills` gồm 2 nhóm pipeline — `apk-skills` (5 skill `00-apk-convert` → `04-apk-verify-fix`) và `video-skills` (10 skill `00-video-orchestrator` → `09-assembly-delivery`) — cùng 1 skill độc lập `security-scan`.
+Kết quả mong đợi: `.agents/skills` gồm 10 skill đang hoạt động (`business-analyst`, `cat`, `code-search-expert`, `convert-model`, `dev-workflows`, `dog`, `english-exam-solver`, `exam-listening-verbatim`, `novel-summarizer`, `read-only`); `other-skills` gồm 2 nhóm pipeline — `apk-skills` (5 skill `00-apk-convert` → `04-apk-verify-fix`) và `video-skills` (10 skill `00-video-orchestrator` → `09-assembly-delivery`) — cùng 1 skill độc lập `security-scan`.
 
 ## Sử dụng
 
@@ -95,6 +95,7 @@ Kết quả mong đợi: `.agents/skills` gồm 9 skill đang hoạt động (`b
 | `.agents/skills/cat` | `cat` | Prompt nhân vật mèo 🐈 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin AI coding tools |
 | `.agents/skills/code-search-expert` | `code-search-expert` | Truy xuất và điều hướng code chuyên gia: kết hợp CodeGraph AST, ripgrep và tìm kiếm ngữ nghĩa vector, kèm mở rộng truy vấn tự động Việt→Anh để định vị logic, symbol và luồng kiến trúc |
 | `.agents/skills/convert-model` | `convert-model` | Lập kế hoạch chuyển đổi model ML/DL giữa các runtime (ONNX, TensorRT, OpenVINO, TFLite, Core ML, RKNN...) và xếp hạng các đường chuyển đổi khả thi |
+| `.agents/skills/dev-workflows` | `dev-workflows` | Orchestrator cho 6 workflow phát triển: bug-fix, code-review, documentation, performance-optimization, security-review, tests; tự động route request đến đúng workflow và điều phối theo thứ tự phụ thuộc |
 | `.agents/skills/dog` | `dog` | Prompt nhân vật cún/chó 🐕 báo cáo tin tức hàng ngày: tin tức Việt Nam, thời tiết, AQI, món ăn theo khung giờ, GitHub Trending, tin Augment & Claude trên Reddit, tin AI coding tools, Quote of the Week từ This Week in Rust |
 | `.agents/skills/english-exam-solver` | `english-exam-solver` | Giải đề tiếng Anh, TOEIC, IELTS với quy trình phân tích kỹ, loại trừ đáp án sai và giữ độ chính xác cao |
 | `.agents/skills/exam-listening-verbatim` | `exam-listening-verbatim` | Chép nguyên văn audio listening kiểu IELTS/TOEIC/TOEFL, không tóm tắt, không dịch, không sửa |
@@ -172,6 +173,7 @@ draft_toolkits_20042026/
 │       ├── cat/
 │       ├── code-search-expert/
 │       ├── convert-model/
+│       ├── dev-workflows/
 │       ├── dog/
 │       ├── english-exam-solver/
 │       ├── exam-listening-verbatim/
