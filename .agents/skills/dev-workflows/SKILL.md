@@ -1,20 +1,21 @@
 ---
 name: dev-workflows
-description: "Orchestrator for 6 development workflows: bug-fix, code-review, documentation, performance-optimization, security-review, and tests. Auto-routes user requests to the correct workflow and coordinates multi-step tasks. Covers root cause analysis, comprehensive code review, documentation generation, performance analysis, security review, and test case generation."
+description: "Orchestrator for 6 development workflows: bug-fix, code-review, documentation, performance-optimization, security-review, and tests. Auto-routes user requests to the correct workflow by keyword and coordinates multi-step tasks in dependency order. Triggers when the user asks to fix a bug, review code, generate docs, optimize performance, run a security review, or generate test cases."
 ---
 
-# Dev Workflows Orchestrator
-
-## Identity & Role
-Act as the orchestrator for 6 development workflows. Read the user request, auto-route to the matching workflow, then execute that workflow's checklist. Coordinate multiple workflows when the request spans more than one.
+# Skill: dev-workflows
 
 ## Language Protocol
 - Respond in Vietnamese.
 - Restate non-English requests in English before proceeding.
 - Internal analysis in English; final response in Vietnamese.
 
+## Trigger
+User asks for one of: bug fix, code review, documentation generation, performance optimization, security review, or test case generation. The skill auto-routes by primary intent and coordinates multiple workflows when the request spans more than one.
+
 ## Routing Rules
-Classify the request by primary intent, then run the matching workflow. If multiple intents are present, run each in dependency order.
+
+Classify by primary intent, then run the matching workflow. If multiple intents are present, run each in dependency order.
 
 | Intent keywords | Workflow |
 | --- | --- |
@@ -26,6 +27,7 @@ Classify the request by primary intent, then run the matching workflow. If multi
 | test, tests, testcase, kiểm thử | `tests` |
 
 ## Execution Dependencies
+
 When multiple workflows are requested together, follow this order:
 1. `bug-fix` or `security-review` first — fix bugs and vulnerabilities before anything else.
 2. `performance-optimization` next — optimize only after correctness is confirmed.
@@ -33,106 +35,97 @@ When multiple workflows are requested together, follow this order:
 4. `code-review` after implementation — review the final diff.
 5. `documentation` last — document stable, final behavior.
 
-## Workflows
+## Workflow
 
-### 1. Bug Fix
-Trigger: bug / lỗi / fix / error / crash.
-Arguments: `$ARGUMENTS` = bug description.
+### Phase 1: Classify & Select Workflow(s)
+**Objective**: Route the request to the correct workflow(s) by primary intent.
 
-Help fix this bug: $ARGUMENTS
+- Match the request against the Routing Rules table.
+- If multiple intents are detected, order them per Execution Dependencies.
+- If intent is ambiguous, ask the user to clarify before proceeding — do not guess silently.
+- Announce the selected workflow(s) to the user before executing.
 
-Provide:
-1. Root cause analysis
-2. Step-by-step fix approach
-3. Testing strategy
-4. Prevention measures for similar issues
+### Phase 2: Execute Selected Workflow(s)
+**Objective**: Run each workflow's checklist against the actual codebase.
 
-### 2. Code Review
-Trigger: review / code review / đánh giá code.
-Arguments: `$ARGUMENTS` = file path or current changes.
+#### Bug Fix
+- Perform root cause analysis: read the affected code, trace the error path, identify the root cause — not just the symptom.
+- Provide a step-by-step fix approach with exact file paths and line numbers.
+- Define a testing strategy: how to confirm the fix works and prevent regression.
+- Suggest prevention measures for similar issues in the future.
 
-Perform a comprehensive code review of the specified file or current changes, focusing on:
-1. Code Quality: readability, maintainability, best practices
-2. Security: potential security vulnerabilities
-3. Performance: potential performance issues
-4. Testing: areas that need test coverage
-5. Documentation: code properly documented
+#### Code Review
+- **Code Quality**: readability, maintainability, adherence to project conventions and best practices.
+- **Security**: potential vulnerabilities introduced or exposed by the changes.
+- **Performance**: potential bottlenecks or inefficient patterns.
+- **Testing**: areas that need test coverage or are now untested.
+- **Documentation**: whether code is properly documented and comments are accurate.
 
-$ARGUMENTS
+#### Documentation
+- Overview and purpose of the file/component.
+- API reference with parameters and return values.
+- Usage examples with code snippets.
+- Configuration options if applicable.
+- Error handling and troubleshooting.
+- Dependencies and requirements.
+- Format as clear, structured Markdown.
 
-### 3. Documentation
-Trigger: document / docs / tài liệu / readme.
-Arguments: `$ARGUMENTS` = file or component.
+#### Performance Optimization
+- Analyze algorithm complexity and efficiency.
+- Examine memory usage patterns (allocations, leaks, retention).
+- Check database queries and optimization opportunities (indexes, N+1, batching).
+- Evaluate caching strategies (applicable? invalidation correct?).
+- Assess network requests and bundling opportunities.
+- For frontend code, check rendering performance (re-renders, layout thrashing, bundle size).
+- Suggest specific optimizations with expected impact — not generic advice like "make it faster".
 
-Generate documentation for: $ARGUMENTS
+#### Security Review
+- Input validation and sanitization completeness.
+- Authentication and authorization checks on every entry point.
+- Data exposure and privacy concerns (PII in logs, responses, error messages).
+- Injection vulnerabilities (SQL, XSS, command injection, SSRF).
+- Cryptographic implementations (algorithm choice, key management, constant-time comparison).
+- Dependencies with known vulnerabilities (CVEs, outdated packages).
+- Provide specific recommendations for any issues found, with severity ranking.
 
-Include:
-1. Overview and purpose
-2. API reference with parameters and return values
-3. Usage examples with code snippets
-4. Configuration options if applicable
-5. Error handling and troubleshooting
-6. Dependencies and requirements
+#### Tests
+- Happy path scenarios.
+- Edge cases and boundary conditions (empty, null, max, min, off-by-one).
+- Error handling and exceptions (expected failures, unexpected input types).
+- Integration points with other components (mocks, stubs, contract tests).
+- Performance considerations (load, stress, timeout behavior).
+- Security edge cases (injection in test input, privilege escalation).
+- Use the project's existing testing framework conventions; include setup/teardown as needed.
 
-Format as clear, structured markdown.
+### Phase 3: Summarize & Hand Off
+**Objective**: Report what was done and suggest next steps.
 
-### 4. Performance Optimization
-Trigger: performance / optimize / hiệu năng / tốc độ.
-Arguments: `$ARGUMENTS` = file path.
+- Summarize: what was done, which workflows ran, which files were touched.
+- Suggest follow-up actions (e.g. run tests, update docs, review again after changes).
+- If multiple workflows ran, confirm each completed its checklist.
 
-Analyze the performance of: $ARGUMENTS
+## Output Format
+- For single-workflow requests: deliver the workflow's output directly (analysis, review findings, generated docs, test cases, etc.).
+- For multi-workflow requests: clearly label each workflow's output with a `## [Workflow Name]` header, in execution-dependency order.
+- End with a `## Summary` section listing completed workflows, files touched, and follow-up suggestions.
 
-Examine:
-1. Algorithm complexity and efficiency
-2. Memory usage patterns
-3. Database queries and optimization opportunities
-4. Caching strategies
-5. Network requests and bundling
-6. Rendering performance (for frontend code)
+## Don'ts
+- Do not run any workflow without first reading the relevant files — never review or analyze blindly.
+- Do not delegate to other skills — this skill executes the workflow content itself.
+- Do not guess the workflow when intent is ambiguous — ask the user to clarify.
+- Do not reverse Execution Dependencies order — fixing bugs before optimizing, testing before reviewing.
+- Do not expand beyond the user's stated scope without asking first.
+- Do not give generic optimization advice ("make it faster", "use caching") — every suggestion must include a specific mechanism and expected impact.
+- Do not skip the security review checklist items — each entry point must be checked even if no issues are obvious.
 
-Suggest specific optimizations with expected impact.
-
-### 5. Security Review
-Trigger: security / bảo mật / vulnerability / injection.
-Arguments: `$ARGUMENTS` = file path.
-
-Perform a security review of: $ARGUMENTS
-
-Focus on:
-1. Input validation and sanitization
-2. Authentication and authorization checks
-3. Data exposure and privacy concerns
-4. Injection vulnerabilities (SQL, XSS, etc.)
-5. Cryptographic implementations
-6. Dependencies with known vulnerabilities
-
-Provide specific recommendations for any issues found.
-
-### 6. Tests
-Trigger: test / tests / testcase / kiểm thử.
-Arguments: `$ARGUMENTS` = file or module.
-
-Generate test cases for: $ARGUMENTS
-
-Cover:
-1. Happy path scenarios
-2. Edge cases and boundary conditions
-3. Error handling and exceptions
-4. Integration points with other components
-5. Performance considerations
-6. Security edge cases
-
-Use appropriate testing framework conventions and include setup/teardown as needed.
-
-## Coordination Protocol
-1. Classify the request using the Routing Rules table.
-2. Announce the selected workflow(s) to the user.
-3. Run each selected workflow using its checklist above.
-4. When multiple workflows are selected, follow Execution Dependencies order.
-5. After all workflows complete, summarize: what was done, files touched, and follow-up suggestions.
-6. If intent is ambiguous, ask the user to clarify before proceeding.
-
-## Boundaries
-- This skill executes the workflow content itself; it does not delegate to other skills.
-- Read the relevant files before running any workflow — do not review or analyze blindly.
-- Stay within the user's stated scope; ask before expanding to new files or modules.
+## Quality Checklist
+- [ ] Request classified to the correct workflow(s) using the Routing Rules table?
+- [ ] Relevant files read before executing any workflow?
+- [ ] Each selected workflow's full checklist completed?
+- [ ] Multiple workflows executed in Execution Dependencies order?
+- [ ] Bug fix includes root cause (not just symptom), fix approach, testing strategy, and prevention?
+- [ ] Code review covers all 5 areas (quality, security, performance, testing, documentation)?
+- [ ] Security review checks all 6 categories and ranks findings by severity?
+- [ ] Test cases cover happy path, edge cases, errors, integration, performance, and security?
+- [ ] Summary section lists completed workflows, files touched, and follow-up suggestions?
+- [ ] No workflow executed on files that were not read first?
