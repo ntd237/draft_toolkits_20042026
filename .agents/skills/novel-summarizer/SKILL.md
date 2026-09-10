@@ -1,63 +1,59 @@
 ---
 name: novel-summarizer
-description: "Đọc và tóm tắt chi tiết, chính xác nội dung từng chương và dải chương tiểu thuyết (web novel, kiếm hiệp, tiên hiệp, huyền huyễn, light novel) từ đường link hoặc dải URL yêu cầu. Triggers when the user provides a novel URL or a URL pattern with a chapter range (e.g. chương 5 đến chương 8) and wants a structured, high-fidelity summary covering the whole range without missing key events."
+description: "Đọc và tóm tắt chi tiết, chính xác nội dung từng chương và dải chương tiểu thuyết (web novel, kiếm hiệp, tiên hiệp, huyền huyễn, light novel) từ đường link hoặc dải URL yêu cầu. Kích hoạt khi người dùng cung cấp link truyện hoặc quy luật URL kèm dải chương (ví dụ: từ chương 5 đến chương 8) và muốn có bản tóm tắt chi tiết, có cấu trúc, độ chính xác cao cho toàn bộ dải chương mà không bỏ sót sự kiện chính."
 ---
 
 # Skill: novel-summarizer
 
-## Language Protocol
-- Respond in Vietnamese. Restate non-English requests in English before proceeding.
-- Internal analysis in English; final summary in Vietnamese with original proper-noun terms preserved (Hán-Việt or original transliteration).
+## Điều kiện kích hoạt
+Người dùng cung cấp liên kết truyện (hoặc quy luật URL và dải chương, ví dụ từ chương `05` đến chương `08`) của một bộ tiểu thuyết — tiên hiệp, huyền huyễn, ngôn tình, kiếm hiệp, đô thị, light novel, v.v. — và yêu cầu tóm tắt toàn bộ dải chương với đầy đủ chi tiết từng chương.
 
-## Trigger
-User provides a novel link (or a URL pattern and a chapter range, e.g. from chapter `05` to chapter `08`) for a novel — tiên hiệp, huyền huyễn, ngôn tình, kiếm hiệp, đô thị, light novel, etc. — and needs a summary that covers the entire range with per-chapter detail.
+## Quy trình thực hiện
 
-## Workflow
+### Giai đoạn 1: Xác định quy luật URL & Lập danh sách chương
+**Mục tiêu**: Xác định quy luật tạo URL cho dải chương được yêu cầu.
 
-### Phase 1: Resolve URL Pattern & Build Chapter List
-**Objective**: Determine the URL pattern for the requested chapter range.
+- Phân tích liên kết mẫu để tìm vị trí số chương:
+  - Dạng số nguyên: `.../chuong-5.html` → `.../chuong-6.html`, `.../chuong-7.html`
+  - Dạng đệm số không (zero-padded): `.../c05` → `.../c06`, `.../c07`
+  - Dạng slug kèm tiêu đề: nếu URL có chứa tiêu đề chương (ví dụ: `chuong-5-khoi-dau`), thử tải chương đầu tiên hoặc tìm liên kết chương tiếp theo từ HTML của chương hiện tại.
+- Lập danh sách các URL cần truy cập từ $N_{start}$ đến $N_{end}$.
 
-- Parse the sample link to find the chapter-number position:
-  - Integer form: `.../chuong-5.html` → `.../chuong-6.html`, `.../chuong-7.html`
-  - Zero-padded form: `.../c05` → `.../c06`, `.../c07`
-  - Slug form with title: if the URL includes the chapter title (e.g. `chuong-5-khoi-dau`), attempt to fetch the first chapter or find the next-chapter link from the current chapter's HTML.
-- Build the list of URLs to visit from $N_{start}$ to $N_{end}$.
+### Giai đoạn 2: Lấy nội dung từng chương
+**Mục tiêu**: Lấy nội dung văn bản thô cho từng chương trong dải.
 
-### Phase 2: Retrieve Content Per Chapter
-**Objective**: Fetch the raw text content for each chapter in the range.
+- Sử dụng `read_url_content` để lấy nội dung văn bản thô của từng liên kết trong dải.
+- Kiểm tra và xử lý dữ liệu trả về:
+  - **Thành công**: Trích xuất tiêu đề chương và toàn bộ nội dung văn bản thân chương.
+  - **Lỗi** (404, 403, Cloudflare, tường phí/paywall hoặc nội dung rỗng): Ghi nhận lỗi cho chương đó. Nếu không thể vượt qua rào cản, báo cáo rõ ràng cho người dùng biết chương nào bị lỗi và đề xuất họ dán trực tiếp nội dung thô của chương đó vào cuộc hội thoại.
 
-- Use `read_url_content` to retrieve the raw text content of each link in the range.
-- Validate the returned data:
-  - **Success**: extract the chapter title and full body text.
-  - **Error** (404, 403, Cloudflare, paywall, or empty content): record the error for that chapter. If the obstacle cannot be bypassed, report clearly to the user which chapter failed and suggest they paste the raw text of that chapter directly.
+### Giai đoạn 3: Tiền xử lý & Trích xuất sự kiện cốt lõi
+**Mục tiêu**: Tách nội dung truyện khỏi tạp âm và ghi nhận các thực thể quan trọng.
 
-### Phase 3: Pre-Process & Extract Facts
-**Objective**: Separate story content from noise and capture key entities.
+- Loại bỏ mọi tạp âm: Lời nhắn của converter/dịch giả, quảng cáo website, liên kết chương trước/sau, bình luận.
+- Nhận diện và ghi chú các thực thể chính:
+  - **Nhân vật**: Nhân vật chính, nhân vật phụ, phản diện xuất hiện hoặc được nhắc tới.
+  - **Bối cảnh & Địa điểm**: Nơi diễn ra sự kiện, thời gian, các thế lực/môn phái liên quan.
+  - **Bảo toàn danh từ riêng**: Giữ nguyên tên nhân vật, địa danh, công pháp, chiêu thức, cảnh giới tu luyện, pháp bảo/vật phẩm theo dạng gốc (Hán-Việt hoặc phiên âm gốc), đảm bảo tính nhất quán xuyên suốt các chương.
 
-- Remove all noise: translator/converter notes, web ads, previous/next chapter links, comments.
-- Identify and note key entities:
-  - **Characters**: main characters, supporting characters, antagonists appearing or mentioned.
-  - **Locations & Setting**: where events occur, time, related factions.
-  - **Preserve proper nouns**: keep character names, place names, techniques, cultivation realms, items in their original form (Hán-Việt or original phonetic form), consistent across chapters.
+### Giai đoạn 4: Tóm tắt có cấu trúc
+**Mục tiêu**: Xây dựng bản tóm tắt từng chương gồm 4 thành phần cùng phần tổng quan diễn biến.
 
-### Phase 4: Structured Summarization
-**Objective**: Build a per-chapter summary with 4 components and an arc overview.
+Với mỗi chương, xuất bản tóm tắt gồm:
+1. **Tiêu đề & Thông tin chương**: Số thứ tự chương và tên chương (nếu có).
+2. **Nhân vật & Địa điểm**: Các thực thể then chốt xuất hiện trong chương.
+3. **Diễn biến chính**: Dòng thời gian tuần tự (3–6 gạch đầu dòng súc tích nắm bắt các sự kiện quan trọng).
+4. **Điểm nhấn & Tình huống kết (Cliffhanger)**: Kỹ thuật dẫn dắt (cài cắm/plot twist), biến cố bất ngờ hoặc câu hỏi mở ở cuối chương.
 
-For each chapter, produce:
-1. **Chapter title & info**: chapter number and name (if available).
-2. **Characters & Locations**: the key entities appearing in the chapter.
-3. **Main events**: sequential timeline (3–6 concise bullets capturing key points).
-4. **Highlights & Cliffhanger**: narrative technique (foreshadowing/plot twist), unexpected event, or open question at chapter end.
+Sau đó xây dựng **Tổng quan dải chương (Arc Overview)**: Tóm tắt ngắn gọn 1–2 đoạn văn về tiến trình cốt truyện xuyên suốt từ chương đầu đến chương cuối của dải.
 
-Then build the **Arc Overview**: a short 1-2 paragraph summary of the plot progression across the full range from first to last chapter.
+### Giai đoạn 5: Kiểm tra độ chuẩn xác & Xuất kết quả
+**Mục tiêu**: Đối chiếu bản tóm tắt với nguồn truyện trước khi bàn giao.
 
-### Phase 5: Fidelity Check & Output
-**Objective**: Verify the summary against the source before delivery.
+- Chạy Danh sách kiểm tra chất lượng (Quality Checklist). Xác nhận không có chi tiết bịa đặt, không nhầm lẫn tên gọi, không bỏ sót sự kiện mấu chốt.
+- Xuất kết quả hoàn chỉnh theo định dạng Markdown (xem Định dạng đầu ra bên dưới).
 
-- Run the Quality Checklist. Confirm no fabrication, no name confusion, no missing key events.
-- Output the complete result in Markdown format (see Output Format below).
-
-## Output Format
+## Định dạng đầu ra
 
 ```markdown
 # 📖 TÓM TẮT TIỂU THUYẾT: [TÊN TRUYỆN] (NẾU XÁC ĐỊNH ĐƯỢC)
@@ -90,17 +86,17 @@ Then build the **Arc Overview**: a short 1-2 paragraph summary of the plot progr
 - **Manh mối / Hố chưa lấp (Foreshadowing)**: [Các chi tiết bí ẩn được tác giả cài cắm cho các chương sau].
 ```
 
-## Don'ts
-- Do not fabricate plot content for chapters that failed to load or were never read — report the gap instead.
-- Do not write one-line shallow summaries like "Chương này nhân vật A đánh nhau với nhân vật B rồi thắng" without context or cause.
-- Do not mix analysis/foreshadowing into the main event section — place interpretive notes in the dedicated Foreshadowing section.
-- Do not translate or alter proper nouns (names, techniques, cultivation realms, items) in ways that shift their meaning.
-- Do not include web noise (watermarks, translator credits, ads) in the summary.
-- Do not reorder events against the chapter's original timeline.
+## Những điều cần tránh
+- Không tự bịa đặt nội dung cốt truyện cho những chương tải lỗi hoặc chưa đọc — phải báo cáo rõ ràng việc thiếu dữ liệu.
+- Không viết tóm tắt hời hợt một dòng như "Chương này nhân vật A đánh nhau với nhân vật B rồi thắng" mà thiếu bối cảnh hoặc nguyên nhân.
+- Không trộn lẫn suy đoán/phân tích cài cắm vào phần diễn biến chính — đặt các ghi chú diễn giải vào đúng mục Manh mối / Foreshadowing chuyên biệt.
+- Không tự ý dịch hoặc làm biến đổi danh từ riêng (tên gọi, công pháp, cảnh giới tu luyện, pháp bảo/vật phẩm) làm sai lệch nghĩa gốc.
+- Không đưa tạp âm website (watermark, lời nhắn dịch giả, quảng cáo) vào bản tóm tắt.
+- Không đảo lộn thứ tự sự kiện trái với dòng thời gian gốc của chương truyện.
 
-## Quality Checklist
-- [ ] All chapters in the requested range ($N_{start}$ to $N_{end}$) read?
-- [ ] Proper nouns, forms of address, and terminology accurate and consistent across chapters?
-- [ ] Each chapter's main events cover the key plot points?
-- [ ] Summary events clearly separated from analysis/character progression notes?
-- [ ] Any failed chapters reported to the user without fabricated replacement content?
+## Danh sách kiểm tra chất lượng
+- [ ] Đã đọc đầy đủ toàn bộ các chương trong dải yêu cầu ($N_{start}$ đến $N_{end}$)?
+- [ ] Danh từ riêng, cách xưng hô và thuật ngữ có chuẩn xác và nhất quán xuyên suốt các chương không?
+- [ ] Diễn biến chính của từng chương có bao quát được các điểm nút cốt truyện quan trọng không?
+- [ ] Các sự kiện tóm tắt đã được tách biệt rõ ràng với phần phân tích/tiến triển nhân vật chưa?
+- [ ] Có báo cáo rõ các chương bị lỗi cho người dùng thay vì tự bịa nội dung thay thế không?
