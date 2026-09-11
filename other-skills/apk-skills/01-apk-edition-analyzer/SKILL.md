@@ -1,81 +1,80 @@
 ---
 name: 01-apk-edition-analyzer
-description: Analyze a single APK/XAPK to map ads SDKs, feature flags, obfuscation, native libs, tech stack and package info. Outputs analysis.json for downstream converters. Read-only, no patching.
+description: Deep static reverse-engineering analyzer for Android APK/XAPK packages. Maps ads SDKs, feature flags, premium gates, obfuscation, native libraries, integrity checks, and authentication dependencies. Outputs machine-readable analysis.json and human-readable REPORT.md for downstream converters. Read-only.
 ---
 
-# APK Edition Analyzer
+# Skill: 01-apk-edition-analyzer
 
-## Context & Role
-You are a **Senior Android Reverse Engineer**. Your job is to analyze ONE APK or XAPK file (free or paid edition) owned by the user and produce an accurate, evidence-backed map of everything that differs between editions: ads, premium gates, build config, obfuscation, native libs, and package structure.
+## Language Protocol
+- Respond in Vietnamese. Restate non-English requests in English first.
+- Internal analysis in English; final report in Vietnamese with standard Android technical terms.
 
-> **Scope guard:** Only operate on apps the user legally owns. If the user states the APK is not theirs, refuse and explain the legal requirement.
-
-## Task Description
-- **Input:** One file path: `.apk` or `.xapk` (XAPK = zip containing `base.apk` + `split_*.apk` + optional `*.obb`).
-- **Output:**
-  - `analysis.json` — machine-readable, consumed by `02-apk-free2paid` / `03-apk-paid2free` without re-asking.
-  - `REPORT.md` — human-readable report with evidence (file + line / smali snippet).
-- **Constraints:** Read-only. Do NOT patch, rebuild, or sign. Auto-detect tech stack, XAPK layout, obfuscation, and native libs.
+## Trigger
+User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gates, or runs `/01-apk-edition-analyzer`.
 
 ## Workflow
 
-### Step 1 — Validate & Unpack
-1. Verify file exists and extension is `.apk` or `.xapk`.
-2. If `.xapk`: unzip to `work/analyze/unpacked/` and list entries. Identify `base.apk`, `config.*.apk` splits, and `obb/` payloads.
-3. Pick the primary APK (`base.apk` for XAPK, otherwise the input file) for deep analysis. Keep split list for the report.
+### Phase 1: Validate, Unpack & Layout Inspection
+**Objective**: Unpack package structures and isolate primary APK and split bundles.
 
-### Step 2 — Package & Signature Fingerprint
-1. Run `aapt2 dump badging <apk>` and `aapt2 dump xmltree --file AndroidManifest.xml <apk>` to extract: `package`, `versionCode`, `versionName`, `permissions`, `applicationId`, launch activity, `minSdk`/`targetSdk`, `extractNativeLibs`, and the full ABI list from `badging` `native-code`.
-2. Run `apksigner verify --print-certs <apk>` (or `uber-apk-signer` verify) to record signing scheme (v1/v2/v3/v4) and cert fingerprint.
-3. Record whether the APK is debuggable, uses `split` or `bundle` format.
-4. **Note:** the converted build will be signed with a NEW keystore (never the original cert), so anything comparing the original cert fingerprint at runtime must be flagged in Step 4.4.
+- Verify input file exists with `.apk` or `.xapk` extension. Confirm app legal ownership; halt execution if ownership is not confirmed.
+- If `.xapk`: extract to `work/analyze/unpacked/`, list splits (`config.*.apk`) and `obb/` assets. Select primary `base.apk` for deep decompilation while recording split layouts.
+- If single `.apk`: select input file directly for decompilation.
 
-### Step 3 — Decode & Detect Stack
-1. Run `java -jar apktool.jar d <apk> -o work/analyze/decompiled -f` and `jadx --no-res -d work/analyze/jadx <apk>` in parallel.
-2. Detect tech stack by artifacts:
-   - `lib/arm64-v8a/libflutter.so` or `assets/flutter_assets/` → `flutter`
-   - `assets/index.android.bundle` or `libreactnativejni.so` → `react-native`
-   - `lib/arm64-v8a/libunity.so` or `assets/bin/Data/` → `unity`
-   - Otherwise → `native`
-3. Detect obfuscation:
-   - Class names like `a/b/c.java` or `a.java` in `smali/` → obfuscated.
-   - Check `apktool.yml` for `isFrameworkApk` and look for `mapping.txt` reference.
-   - Set `isObfuscated: true/false` and estimate level (`none` / `light` / `heavy`).
+### Phase 2: Manifest & Signature Fingerprinting
+**Objective**: Extract package metadata, permissions, launch points, ABI support, and signature schemes.
 
-### Step 4 — Scan Ads SDKs & Feature Flags
-1. **Ads SDKs:** Grep `AndroidManifest.xml`, `smali/**/*.smali`, and `resources.arsc` strings for:
-   - `com.google.android.gms.ads` (AdMob), `com.facebook.ads` (Audience Network), `com.applovin`, `com.unity3d.ads`, `com.ironsource`, `com.bytedance.sdk.openadsdk` (Pangle).
-   - Record each SDK with evidence: file path + matched string + smali method that calls `loadAd` / `show` / `initialize`.
-2. **Feature flags / premium gates:** Grep for:
-   - `BuildConfig`, `FLAVOR`, `IS_PREMIUM`, `isPremium`, `isPro`, `premium`, `billing`, `BillingClient`, `purchases`.
-   - Record file, field name, default value, and the branching `if-eqz` / `if-nez` that gates premium code.
-3. **Permissions & components:** List `AD_ID`, `INTERNET`, `BILLING` permissions and ad-related `Activity`/`Service`/`Receiver` entries.
+- Run `aapt2 dump badging <apk>` and `aapt2 dump xmltree --file AndroidManifest.xml <apk>` to extract:
+  - `package`, `versionCode`, `versionName`, `applicationId`, launcher activity.
+  - Declared permissions (specifically `INTERNET`, `AD_ID`, `BILLING`).
+  - `minSdk`, `targetSdk`, `extractNativeLibs`, and supported ABIs from `native-code`.
+- Run `apksigner verify --print-certs <apk>` to record signature schemes (v1/v2/v3/v4) and certificate fingerprints.
+- Record whether the build is debuggable and whether it uses split or app bundle format.
 
-### Step 4.5 — Scan Integrity Checks & Auth Dependencies
-These determine whether the app will break after re-signing with a NEW keystore (login failures, silent blocks, black screen, network errors). Grep smali, `resources.arsc`, and `res/xml/`:
-1. **Self-signature checks (`integrityChecks`):**
-   - `PackageManager.GET_SIGNATURES`, `getPackageInfo(...GET_SIGNATURES)`, `getSigningCertificateHistory`, `signingInfo`, `hasSigningCertificate`.
-   - Custom comparisons: `signatures[0].toCharsString()`, `.toByteArray()`, hardcoded hash constants near `MessageDigest`/`MD5`/`SHA-1`/`SHA-256` calls on signature bytes.
-   - Record the file + method that returns the check result (this is the patch target for converters).
-2. **Platform attestation:** `com.google.android.play.core.integrity` (Play Integrity), `com.google.android.gms.safetynet` (SafetyNet), `com.google.firebase.appcheck` (App Check). These CANNOT be bypassed locally — flag as `bypassable: false`.
-3. **Auth dependencies (`authDependencies`):**
-   - `FirebaseAuth`, `GoogleSignIn`, `com.google.android.gms.auth`, `androidx.credentials`/`CredentialManager`, `FacebookLogin`.
-   - Google Sign-In requires the signing keystore's SHA-1 registered in the Firebase console → re-signing with a new keystore breaks it (`ApiException 10`).
-4. **Certificate pinning (`integrityChecks` with `type: "cert-pinning"`):**
-   - `okhttp3.CertificatePinner`, `NetworkSecurityConfig` (`res/xml/network_security_config.xml` with `pin-set`/`trust-anchors`), custom `X509TrustManager` implementations.
-   - Re-signing does not break TLS pinning to the *server*, but custom TrustManagers pinning the *app's own* cert must be flagged.
+### Phase 3: Decompile & Tech Stack Identification
+**Objective**: Disassemble bytecode and resources, determine framework type, and evaluate obfuscation level.
 
-### Step 5 — Map Native & Emit Artifacts
-1. List `.so` files under `lib/<abi>/` with size and whether symbols are stripped (`file` / `nm -D` check).
-2. Note any `.so` that references ad keywords via `strings`.
-3. Build `analysis.json` and `REPORT.md` per Output Format. Save under `work/analyze/`.
+- Run `apktool d <apk> -o work/analyze/decompiled -f` and `jadx --no-res -d work/analyze/jadx <apk>`.
+- Detect tech stack from disassembled artifacts:
+  - `lib/<abi>/libflutter.so` or `assets/flutter_assets/` → `flutter`
+  - `assets/index.android.bundle` or `libreactnativejni.so` → `react-native`
+  - `lib/<abi>/libunity.so` or `assets/bin/Data/` → `unity`
+  - Otherwise → `native`
+- Assess obfuscation level:
+  - Check for shortened class hierarchies (e.g. `smali/a/b/c.smali`) and `apktool.yml` framework markers.
+  - Set `isObfuscated: true/false` and classify `obfuscationLevel` as `none`, `light`, or `heavy`.
+
+### Phase 4: Scan Ads, Flags, Integrity & Auth Dependencies
+**Objective**: Map monetization components, premium branch logic, integrity validation, and auth dependencies.
+
+- Scan Ads SDKs: grep `AndroidManifest.xml`, `smali/**/*.smali`, and `resources.arsc` for known ad networks:
+  - AdMob (`com.google.android.gms.ads`), Facebook (`com.facebook.ads`), AppLovin (`com.applovin`), Unity Ads (`com.unity3d.ads`), IronSource (`com.ironsource`), Pangle (`com.bytedance.sdk.openadsdk`).
+  - Record each SDK with file path, matched pattern, and caller method (`loadAd`, `show`, `initialize`).
+- Scan Feature Flags & Premium Gates: grep for `BuildConfig`, `FLAVOR`, `IS_PREMIUM`, `isPremium`, `isPro`, `billing`, `BillingClient`, `purchases`.
+  - Record target file, field name, default value, and the gating branch opcodes (`if-eqz` / `if-nez`).
+- Scan Self-Signature Checks:
+  - Grep for `PackageManager.GET_SIGNATURES`, `getSigningCertificateHistory`, `signingInfo`, `hasSigningCertificate`, and custom comparisons on `signatures[0].toByteArray()`.
+  - Pinpoint the exact method returning the validation boolean (target method for converter patching).
+- Scan Platform Attestation & Cert Pinning:
+  - Grep for `play.core.integrity`, `safetynet`, `firebase.appcheck` (flag `bypassable: false`).
+  - Grep for `okhttp3.CertificatePinner`, `network_security_config.xml`, and custom `X509TrustManager` implementations.
+- Scan Authentication Dependencies:
+  - Grep for `FirebaseAuth`, `GoogleSignIn`, `CredentialManager`.
+  - Flag requirement: re-signing will invalidate Google Sign-In unless the new keystore SHA-1 is added to Firebase Console (`ApiException 10`).
+
+### Phase 5: Native Library Mapping & Artifact Synthesis
+**Objective**: Catalog compiled native binaries and compile structured analysis outputs.
+
+- Scan `lib/<abi>/*.so`, checking binary architecture, stripped symbol status, and string references to monetization routines.
+- Determine `editionGuess` (`free` vs `paid`) with confidence level (`high`, `medium`, `low`) backed by at least two independent evidence signals.
+- Synthesize `work/analyze/analysis.json` and `work/analyze/REPORT.md`.
 
 ## Output Format
 
-### analysis.json
+### `work/analyze/analysis.json`
 ```json
 {
-  "inputFile": "app-free.apk",
+  "inputFile": "app.apk",
   "isXapk": false,
   "splits": [],
   "obbFiles": [],
@@ -105,38 +104,28 @@ These determine whether the app will break after re-signing with a NEW keystore 
     {"type": "play-integrity", "file": "smali/...", "method": "unknown", "bypassable": false}
   ],
   "authDependencies": [
-    {"kind": "firebase-auth", "evidence": "smali/...: FirebaseAuth.getInstance"},
     {"kind": "google-signin", "evidence": "res/values/strings.xml: default_web_client_id"}
   ],
   "nativeLibs": [
-    {"abi": "arm64-v8a", "name": "libflutter.so", "stripped": true}
+    {"abi": "arm64-v8a", "name": "libnative.so", "stripped": true}
   ],
   "needsManualReview": []
 }
 ```
 
-### REPORT.md
-Sections: Summary, Input Info, Tech Stack Evidence, Ads SDK Table, Feature Flag Table, Integrity & Auth Dependencies (re-signing impact assessment), Manifest Highlights, Native Libs, Obfuscation Assessment, Suggested Converter Direction, Gaps / Unknowns.
+### `work/analyze/REPORT.md`
+Markdown document structured with: Summary, Input Metadata, Tech Stack Findings, Ads SDK Inventory, Feature Flag Ledger, Integrity Checks & Re-Signing Risks, Native Libraries, Obfuscation Profile, Suggested Conversion Path.
 
-## Important Rules
-
-### MUST
-- Always produce BOTH `analysis.json` and `REPORT.md` under `work/analyze/`.
-- Every finding must cite evidence (file path + line or smali snippet). Use `unknown` when not found.
-- Infer `editionGuess` from evidence; state confidence (`high`/`medium`/`low`) and reasoning.
-- Every self-signature check found MUST record the exact method returning the check result — converters patch that method, not the constant.
-
-### STRICTLY PROHIBITED
-- Do NOT modify, rebuild, or sign the APK in this skill.
-- Do NOT guess class names when obfuscated — match by string constants and method signatures instead.
-- Do NOT proceed if the user confirms they do not own the app.
-- Do NOT hallucinate SDKs or flags without grep evidence.
+## Don'ts
+- Do not modify, patch, rebuild, or re-sign the APK within this skill (read-only enforcement).
+- Do not guess class names or method signatures on obfuscated code; resolve via string constants and descriptor signatures.
+- Do not declare ad SDKs, flags, or integrity checks without concrete grep evidence (file path + smali line/snippet).
+- Do not analyze packages without confirming legal ownership.
 
 ## Quality Checklist
-- [ ] `analysis.json` is valid JSON and contains all required fields?
-- [ ] Every ads SDK / flag entry has an evidence string?
-- [ ] Integrity checks & auth dependencies scanned, with patch targets for self-signature checks?
-- [ ] Re-signing impact assessed (Google Sign-In SHA-1, attestation, pinning)?
-- [ ] Tech stack and obfuscation level match observed artifacts?
-- [ ] `editionGuess` is justified with at least two independent signals?
-- [ ] XAPK splits and OBB files (if any) are fully listed?
+- [ ] `analysis.json` contains all required schema keys and is valid JSON?
+- [ ] Every ad SDK and feature flag lists concrete file and smali evidence?
+- [ ] Self-signature checks pinpoint the exact validation method to patch?
+- [ ] Re-signing risks (Google Sign-In SHA-1, Play Integrity, App Check) explicitly flagged?
+- [ ] Tech stack and obfuscation levels accurately deduced from binary/smali artifacts?
+- [ ] `editionGuess` justified by at least two independent indicators?

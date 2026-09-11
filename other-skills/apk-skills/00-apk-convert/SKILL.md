@@ -1,87 +1,75 @@
 ---
 name: 00-apk-convert
-description: One-command orchestrator for free↔paid APK/XAPK conversion. Drives the full pipeline analyze → convert → verify & auto-fix. Just give one APK/XAPK and a direction; get debug + release builds.
+description: End-to-end orchestrator for free↔paid APK/XAPK conversion. Coordinates analysis, edition conversion (ads removal/injection, premium gating/ungating), signing, and on-device verification with auto-fix loops into a single unified pipeline. Use when the user requests a complete conversion from a single APK/XAPK file.
 ---
 
-# APK Convert — Orchestrator
+# Skill: 00-apk-convert
 
-## Context & Role
-You are a **Senior Android Release Engineer & Orchestrator**. You coordinate 4 project-local skills into one end-to-end pipeline so the user only runs a single command. You do NOT reimplement their logic — you delegate, track artifacts, handle routing/fallbacks, and guarantee a verified, install-ready result.
+## Language Protocol
+- Respond in Vietnamese. Restate non-English requests in English first.
+- Internal analysis in English; final report in Vietnamese with standard Android technical terms.
 
-**Sub-skills you orchestrate:**
-
-| # | Skill | When |
-|---|---|---|
-| 1 | `01-apk-edition-analyzer` | Phase 1 — map ads, flags, stack, obfuscation, native |
-| 2 | `02-apk-free2paid` | Phase 2a — free → paid (remove ads, unlock premium) |
-| 3 | `03-apk-paid2free` | Phase 2b — paid → free (inject ads, re-gate premium) |
-| 4 | `04-apk-verify-fix` | Phase 3 — install, smoke test, logcat, auto-fix loop |
-
-> **Scope guard:** Only operate on apps the user legally owns. If the user confirms the APK is not theirs, refuse and explain why.
-
-## Task Description
-- **Input:** One file path (`.apk` or `.xapk`) + `direction` (`free2paid` | `paid2free` | `auto`).
-- **Output (always both variants):**
-  - `dist/app-<edition>-debug-unsigned.apk` (or `.xapk`)
-  - `dist/app-<edition>-release-signed.apk` (or `.xapk`)
-  - `work/analyze/analysis.json` + `REPORT.md`
-  - `work/convert-<direction>/PATCH_REPORT.md`
-  - `work/verify/VERIFY_REPORT.md` + `logcat.txt` + `fix-history.md`
-- **Resumable:** If intermediate artifacts already exist and are newer than the input, reuse them after confirming with the user.
-- **Signing:** ALWAYS a NEW signature. The converters generate a fresh keystore for every conversion (or use a user-provided keystore). NEVER reuse or extract the original APK certificate — reusing the old cert defeats the purpose of a new edition and breaks keystore hygiene.
-- **Work dirs:** Namespaced per direction — `work/analyze/`, `work/convert-free2paid/` or `work/convert-paid2free/`, `work/verify/`. Converting both directions on the same input never collides.
+## Trigger
+User asks to convert an APK or XAPK between free and paid editions, or runs `/00-apk-convert` specifying an input package and optional conversion direction.
 
 ## Workflow
 
-### Step 1 — Intake & Preflight
-1. Validate input file exists and extension is `.apk`/`.xapk`. If missing, stop with a clear error.
-2. Confirm legal ownership. Refuse if not owned.
-3. **Toolchain preflight (fail fast):** verify `java`, `apktool.jar`, `keytool`, `zipalign`, `apksigner` (or `uber-apk-signer.jar`), `aapt2`, and `adb` are all available. Stop with a clear error naming the missing tool before any analysis runs.
-4. Resolve options (ask once, defaults in parentheses):
-   - `direction` — `free2paid` | `paid2free` | `auto` (auto = infer from analyzer guess)
-   - `signing` — `create new keystore` (default) | `provide keystore`. Never offer "reuse original cert" — the new edition must be signed with a NEW signature.
-   - `package` — `keep` | `change to <orig>.paid/.free` (default: keep; ask during convert if not decided)
-   - `test account` (optional) — credentials for the S4 login smoke test in verify.
-5. Record resolved options for downstream skills.
+### Phase 1: Intake & Environment Preflight
+**Objective**: Validate legal ownership, inspect input package structure, verify toolchain availability, and resolve conversion parameters.
 
-### Step 2 — Analyze (delegate to `01-apk-edition-analyzer`)
-1. Check `work/analyze/analysis.json` — if it exists and is newer than the input file, ask `Reuse or re-analyze?` Otherwise run the analyzer.
-2. Invoke `01-apk-edition-analyzer` on the input file. Require it to produce `analysis.json` + `REPORT.md`.
-3. Load `analysis.json`. Read `editionGuess`, `techStack`, `isObfuscated`, `adsSdks`, `isXapk`.
-4. If `direction == auto`, infer: `free → free2paid`, `paid → paid2free`. Show inference and confirm before proceeding. If inferred direction conflicts with an explicit `direction`, warn and ask for confirmation.
+- Verify the input file exists and ends with `.apk` or `.xapk`. Confirm the user legally owns the application; halt execution if ownership is not confirmed.
+- Verify CLI toolchain availability: `java`, `apktool.jar`, `keytool`, `zipalign`, `apksigner` (or `uber-apk-signer.jar`), `aapt2`, and `adb`. Halt immediately with an actionable error naming any missing binary.
+- Resolve conversion parameters:
+  - `direction`: `free2paid`, `paid2free`, or `auto` (inferred from analyzer output).
+  - `signing`: generate fresh keystore (default) or user-provided keystore. Never offer or attempt to reuse the original APK certificate.
+  - `package`: `keep` (default) or append `.paid` / `.free`.
+  - `test account`: optional credentials for auth smoke tests.
+- Initialize namespaced workspace directories: `work/analyze/`, `work/convert-<direction>/`, `work/verify/`, and `dist/`.
 
-### Step 3 — Convert (delegate to `02-apk-free2paid` or `03-apk-paid2free`)
-1. Route: `free2paid` → `02-apk-free2paid`, `paid2free` → `03-apk-paid2free`.
-2. Pass through: input file, `analysis.json`, resolved `signing` and `package` choices.
-3. The converter must: backup `work/convert-<direction>/original.apk`, patch (ads + premium gates + signature-check handling), rebuild, zipalign, and emit BOTH `dist/app-*-debug-unsigned.apk` and `dist/app-*-release-signed.apk` plus `PATCH_REPORT.md`.
-4. Gate: run `apksigner verify --verbose` on the release artifact. If it fails, stop and report — do NOT advance to verify.
+### Phase 2: Static Analysis & Route Resolution
+**Objective**: Map app internals via static analysis and lock conversion direction.
 
-### Step 4 — Verify & Auto-Fix (delegate to `04-apk-verify-fix`)
-1. Invoke `04-apk-verify-fix` on the release-signed APK (XAPK: each split).
-2. It must: install via `adb` (or boot an AVD if no device), run S1 no-crash + UI rendered + S2 navigation + S3 edition check (ads hidden for paid, visible for free) + S4 auth smoke test, capture `logcat.txt`.
-3. On failure, the verifier auto-fixes (restore resource/class/`.so`, fix manifest/layout, revert bad branch) and rebuilds — max 5 iterations, `versionCode` +1 each time, reusing the same keystore.
-4. Require `VERIFY_REPORT.md` + `fix-history.md` after.
+- Check `work/analyze/analysis.json`; reuse existing data if newer than input, otherwise invoke `01-apk-edition-analyzer`.
+- Extract `editionGuess`, `techStack`, `isObfuscated`, `adsSdks`, `integrityChecks`, and `authDependencies`.
+- If `direction` is `auto`: map `free` → `free2paid`, `paid` → `paid2free`. Confirm with the user if the inferred direction conflicts with an explicit user choice.
 
-### Step 5 — Summarize & Deliver
-1. Print a summary table:
-   - Input, detected edition, chosen direction, package decision, signing choice (new keystore fingerprint)
-   - Outputs with absolute paths
-   - Verify status: `PASSED` or `FAILED` (+ remaining logcat hint if failed)
-   - Next step: install command `adb install -r dist/app-*-release-signed.apk` or `Replace test ad IDs before store release` for paid2free
-2. Add a **Known Limitations** section to the summary:
-   - Server-side entitlement checks cannot be bypassed locally — premium features validated on the backend stay locked.
-   - If the app uses Google Sign-In / Firebase Auth: the NEW keystore's SHA-1 must be registered in the Firebase Console, otherwise login fails with `ApiException 10 (DEVELOPER_ERROR)`. This is a manual step outside the pipeline.
-   - Play Integrity / SafetyNet / App Check cannot be neutralized locally; apps depending on them may reject the re-signed build.
-3. List every artifact path. Never claim success without `VERIFY_REPORT.md` showing `PASSED`.
+### Phase 3: Edition Conversion Execution
+**Objective**: Execute code, layout, and manifest transformations according to the selected direction.
+
+- Route to `02-apk-free2paid` for free→paid or `03-apk-paid2free` for paid→free, forwarding `analysis.json`, package decision, and signing settings.
+- Ensure the converter creates a pristine backup at `work/convert-<direction>/original.apk`.
+- Apply direction-specific patches, neutralize self-signature checks, bump `versionCode` by 1, rebuild via `apktool`, align with `zipalign`, and sign with the fresh or user-provided keystore.
+- Run `apksigner verify --verbose` on the resulting release build before advancing to verification.
+
+### Phase 4: Device Verification & Auto-Fix
+**Objective**: Perform installation, multi-signal smoke testing, and iterative auto-fixing on a target device or emulator.
+
+- Invoke `04-apk-verify-fix` on the generated release build (`dist/app-*-release-signed.apk`).
+- Verifier installs app via `adb`, launches main activity, and executes smoke suites:
+  - S1: Rendered UI verification, process alive check, zero `FATAL` / ANR / native crash / stack engine error.
+  - S2: UI navigation and screen rendering.
+  - S3: Edition-specific ad visibility and premium feature state verification.
+  - S4: Authentication and login smoke test.
+- If failures occur, verifier enters an auto-fix loop (restoring resources/classes, adjusting layout placeholders, handling missing permissions) up to 5 iterations.
+
+### Phase 5: Summarize & Deliver
+**Objective**: Produce an execution summary, catalog all generated artifacts, and surface manual operational requirements.
+
+- Format delivery summary table: input package, detected edition, chosen direction, package decision, new keystore SHA-256 fingerprint, and verify status (`PASSED` or `FAILED`).
+- Document Known Limitations:
+  - Server-side entitlement checks cannot be bypassed locally.
+  - Google Sign-In / Firebase Auth requires registering the new keystore SHA-1 in Firebase Console (`ApiException 10`).
+  - SafetyNet / Play Integrity server enforcement cannot be bypassed locally.
+- Print absolute paths to all deliverables and provide the direct install command (`adb install -r dist/app-*-release-signed.apk`).
 
 ## Output Format
-All paths are project-relative. The orchestrator itself does not create extra files beyond what sub-skills emit — it only summarizes.
+Project-relative file layout and delivery summary structure:
 ```
 work/analyze/analysis.json
 work/analyze/REPORT.md
 work/convert-<direction>/PATCH_REPORT.md
-work/convert-<direction>/original.apk   # backup
-work/convert-<direction>/release.keystore  # NEW keystore generated for this conversion
+work/convert-<direction>/original.apk
+work/convert-<direction>/release.keystore
 dist/app-<edition>-debug-unsigned.apk
 dist/app-<edition>-release-signed.apk
 work/verify/VERIFY_REPORT.md
@@ -89,42 +77,19 @@ work/verify/logcat.txt
 work/verify/fix-history.md
 ```
 
-## Important Rules
-
-### MUST
-- Always delegate — do NOT copy-paste sub-skill logic into the orchestrator.
-- Always run phases in order: analyze → convert → verify. Never skip analyze or verify.
-- Preserve `work/convert-<direction>/original.apk` untouched; sub-skills restore from it.
-- Keep `versionCode` +1 on every rebuild to avoid downgrade installs.
-- Always produce BOTH debug-unsigned and release-signed artifacts.
-- Always sign with a NEW keystore (or user-provided) — never the original APK's cert.
-- Always end with `VERIFY_REPORT.md`; success = `PASSED` with pidof alive + UI rendered + zero FATAL + edition check + S4 auth check passed.
-
-### STRICTLY PROHIBITED
-- Do NOT guess `direction` without `analysis.json` — run the analyzer first.
-- Do NOT reuse or extract the original APK certificate for signing the converted build.
-- Do NOT log or echo keystore passwords, cert private keys, or ad unit secrets.
-- Do NOT loop verify more than 5 times — stop and report manual steps.
-- Do NOT claim the pipeline succeeded if any phase failed or was skipped.
-- Do NOT operate on an APK the user does not own.
+## Don'ts
+- Do not guess conversion direction without running or inspecting `analysis.json`.
+- Do not reuse or extract the original APK certificate; always generate or use a fresh keystore.
+- Do not log or echo keystore passwords, private keys, or secret tokens into terminal or report outputs.
+- Do not loop verification and auto-fixing beyond 5 iterations; escalate with detailed diagnostic logcat.
+- Do not mark pipeline as successful if any phase failed, was skipped, or if S1 rendered-UI validation failed.
+- Do not operate on APKs that the user does not legally own.
 
 ## Quality Checklist
-- [ ] Toolchain preflight passed at Step 1?
-- [ ] `analysis.json` exists and `editionGuess` justifies the chosen direction?
-- [ ] Correct converter was routed and both APK variants exist with `apksigner verify` passing?
-- [ ] New keystore used (not the original cert)? Fingerprint recorded in PATCH_REPORT?
-- [ ] `PATCH_REPORT.md` lists every patched file with reason?
-- [ ] `VERIFY_REPORT.md` shows `PASSED` with S1/S2/S3/S4 evidence and `logcat.txt` attached?
-- [ ] Summary table lists absolute paths for all deliverables + Known Limitations section?
-
-## Usage Examples
-```
-# Auto-detect direction from APK
-/00-apk-convert file: app-free.apk direction: auto
-
-# Explicit direction, keep package, new keystore
-/00-apk-convert file: app-paid.xapk direction: paid2free signing: create-new-keystore package: keep
-
-# Resume after fixing ad ID manually — reuses analysis.json
-/00-apk-convert file: app-free.apk direction: free2paid
-```
+- [ ] Toolchain preflight verified all required CLI binaries before analysis?
+- [ ] `analysis.json` generated and `editionGuess` verified with supporting evidence?
+- [ ] Correct converter dispatched and both debug-unsigned and release-signed builds generated?
+- [ ] Fresh keystore generated/applied and its SHA-256 fingerprint documented in `PATCH_REPORT.md`?
+- [ ] `apksigner verify --verbose` passed on release artifact?
+- [ ] `VERIFY_REPORT.md` shows `PASSED` with proof of rendered UI, zero FATAL/ANR, and S1-S4 checks passed?
+- [ ] Delivery report includes absolute paths to all artifacts and documents Firebase SHA-1 / Play Integrity limitations?
