@@ -82,33 +82,33 @@ Activates when the user requests prompt optimization, clarification, or enrichme
 
 ## [Descriptive Task Title in User Language]
 
-### 🎯 Role & Context / Vai trò & Bối cảnh
-- **Role / Vai trò**: [Target expert role]
-- **Context / Bối cảnh**: [System background and operational rationale]
+### 🎯 Role & Context 
+- **Role**: [Target expert role]
+- **Context**: [System background and operational rationale]
 
-### 📋 Task / Nhiệm vụ
+### 📋 Task 
 [Clear, atomic action description in User Language]
 
-### 📥 Input / Đầu vào
-- **Artifacts / Phạm vi**: [Target files, API contracts, database schemas]
+### 📥 Input 
+- **Artifacts**: [Target files, API contracts, database schemas]
 - **Tech Stack**: [Languages, frameworks, runtime versions]
 
-### 📤 Expected Output / Đầu ra kỳ vọng
-- **Format / Định dạng**: [Structured Markdown / Code blocks / Tables]
-- **Deliverables / Thành phần bàn giao**: [List of concrete components to deliver]
+### 📤 Expected Output 
+- **Format**: [Structured Markdown / Code blocks / Tables]
+- **Deliverables**: [List of concrete components to deliver]
 
-### ⚙️ Constraints & Rules / Ràng buộc & Quy tắc
-**Must do / Bắt buộc:**
+### ⚙️ Constraints & Rules 
+**Must do:**
 - [Mandatory technical requirement in User Language]
 
-**Must NOT do / Cấm kỵ:**
+**Must NOT do:**
 - [Prohibited anti-pattern / Constraint boundary in User Language]
 
-### ✅ Success Criteria / Tiêu chí nghiệm thu
+### ✅ Success Criteria
 - [Concrete, verifiable verification targets in User Language]
 
 ---
-> 💡 *Assumptions made / Giả định kỹ thuật: [Inferred technical defaults and configurations in User Language]*
+> 💡 *Assumptions made: [Inferred technical defaults and configurations in User Language]*
 ```
 
 ---
