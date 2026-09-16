@@ -25,17 +25,21 @@ Khi được kích hoạt:
 
 ## 3. Step-by-step Workflow
 
-### Bước 1: Thu thập bằng chứng
-- Hỏi người dùng kết quả generate (mô tả từng clip hoặc để file vào `clips/`).
-- Có thể QA từng lô theo `generate_order` trong `prompts.json` — không cần đợi đủ 100% clip; QA sớm giúp phát hiện lỗi ở shot "thiết lập" trước khi người dùng generate phần còn lại.
+### Bước 1: Thu thập bằng chứng theo giai đoạn
+- **Giai đoạn 1 (Keyframe QA — Soi ảnh tĩnh trước khi render video)**:
+  - Kiểm tra các file ảnh `assets/keyframes/<shot_id>_keyframe.png` so với `assets/characters/CHAR-xx_anchor.*`.
+  - Giúp chặn lỗi lệch mặt/sai bối cảnh ngay từ ảnh tĩnh, tránh lãng phí credit và thời gian render video.
+- **Giai đoạn 2 (Video Clip QA — Soi video clip sau khi animate/lip-sync)**:
+  - Kiểm tra các file clip trong `<project>/clips/` hoặc mô tả clip do người dùng cung cấp.
+  - Có thể QA từng lô theo `generate_order` trong `prompts.json` — ưu tiên QA sớm shot "thiết lập" của nhân vật.
 - KHÔNG đánh giá khi không có bằng chứng nào — hỏi trước.
 
-### Bước 2: Kiểm lớp 1 — Khớp nội dung (vs shotlist)
-Với từng shot, đối chiếu:
+### Bước 2: Kiểm lớp 1 — Khớp nội dung & Khuôn mặt (vs shotlist & bible)
+Với từng shot / keyframe, đối chiếu:
 - Đúng chủ thể, đúng hành động mô tả?
 - Đúng bối cảnh/địa điểm (so LOC trong bible)?
-- Nhân vật giữ đúng identity (so CHAR trong bible)?
-- Đúng camera góc/chuyển động như shotlist (sai lệch chấp nhận được nếu không phá ý đồ)?
+- **Độ tương khớp khuôn mặt (Face Similarity)**: Đối chiếu với ảnh `CHAR-xx_anchor.*` trong bible (đúng tỷ lệ mắt, mũi, miệng, Uniqueness Anchors).
+- Đúng camera góc/chuyển động như shotlist?
 - Đúng duration và dialogue (nếu engine native-audio)?
 
 ### Bước 3: Kiểm lớp 2 — Lỗi AI (taxonomy chuẩn)
@@ -48,8 +52,11 @@ Chấm theo danh mục, mỗi lỗi đánh mức `minor` / `major`:
 - Quy tắc mức: `minor` = khán giả thường khó thấy; `major` = phá tanh chung hoặc sai nội dung. Mọi `major` → FAILED.
 
 ### Bước 4: Đề xuất fix theo lỗi
-- `face-drift`/`morphing` → rà Identity trong bible có bị cắt gọn trong prompt không; đề xuất dùng keyframe/seed.
-- `artifact` → bổ sung negative prompt tương ứng.
+- `face-drift` / `morphing`:
+  1. *Nếu shot có thoại/hát*: Đề xuất chuyển `generation_mode` sang **`lip-sync`** (dùng Hedra hoặc LivePortrait với ảnh `CHAR-xx_anchor.*` và file audio).
+  2. *Nếu shot hành động*: Đề xuất tạo storyboard keyframe tĩnh bằng công cụ giữ mặt (InstantID / Midjourney `--cref`) trước khi chạy Image-to-Video.
+  3. *Nếu chuyển động và bối cảnh đã tốt nhưng mặt trôi nhẹ*: Đề xuất phương án cứu shot bằng **Face Swap** (dùng FaceFusion / Remaker AI dán đè ảnh gốc `CHAR-xx_anchor.*` lên clip).
+- `artifact` → bổ sung negative prompt tương ứng (`deformed face, extra limbs...`).
 - `motion-glitch` → đơn giản hóa camera_motion trong shotlist (phải quay lại điều phối, không tự sửa).
 - Sai nội dung → prompt thiếu block nào, trích lại từ shotlist.
 
@@ -65,7 +72,7 @@ Chấm theo danh mục, mỗi lỗi đánh mức `minor` / `major`:
 | Shot | Verdict | Lỗi (taxonomy, mức) | Bằng chứng | Đề xuất fix |
 |------|---------|---------------------|------------|-------------|
 | S01 | PASS | — | <mô tả clip> | — |
-| S02 | FAILED | face-drift (major) | <mô tả> | dùng keyframe CHAR-01; giữ nguyên Identity trong prompt |
+| S02 | FAILED | face-drift (major) | Mặt khác ảnh anchor CHAR-01 | Chuyển sang lip-sync từ CHAR-01_anchor.jpg HOẶC dùng Face Swap đè mặt anchor lên S02.mp4 |
 ## Tổng kết
 - PASS: x/y — FAILED: z/y
 - QA Gate: QUA / KHÔNG QUA (vòng fix kế: <n+1>/3)

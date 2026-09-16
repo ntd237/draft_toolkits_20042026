@@ -50,7 +50,7 @@ description: "Orchestrator điều phối pipeline sản xuất video AI từ A-
 
 ### Bước 1: Hỏi tham số (BẮT BUỘC mỗi lần chạy)
 **Mục tiêu**: Người dùng chọn mọi tham số — không dùng mặc định im lặng.
-- Trình bày tham số kèm các lựa chọn và ĐÁNH DẤU giá trị đề xuất (lấy từ config): engine, mode (lite/full), aspect_ratio, duration_per_shot, language, target_platform.
+- Trình bày tham số kèm các lựa chọn và ĐÁNH DẤU giá trị đề xuất (lấy từ config): engine, mode (lite/full), character_source (has_photos/generate_ai), aspect_ratio, duration_per_shot, language, target_platform.
 - Mỗi lượt hỏi TỐI ĐA 3–4 tham số, luôn kèm đề xuất để người dùng chỉ cần xác nhận.
 - Mục đang chờ mà người dùng không trả lời → hỏi lại đúng mục đó một lần; vẫn không trả lời → DỪNG chờ, KHÔNG tự lấy mặc định.
 - Sau khi chốt: truyền danh sách tham số cho `01-idea-brainstorm` để ghi vào `concept.md` (mục "Tham số chốt").
@@ -69,7 +69,7 @@ description: "Orchestrator điều phối pipeline sản xuất video AI từ A-
 ### Bước 4: Thi hành cổng kiểm soát
 **Mục tiêu**: Không để pipeline chạy lệch.
 - **Approval Gate**: dừng cho người dùng chọn hướng ý tưởng sau `concept.md` (trừ khi ý tưởng đã chốt sẵn từ đầu).
-- **Bible Gate**: chặn `06-video-prompt-engineer` nếu thiếu `bible.md`.
+- **Bible Gate (Multimodal Anchor)**: chặn `06-video-prompt-engineer` nếu thiếu `bible.md` hoặc thiếu file ảnh anchor (`assets/characters/CHAR-xx_anchor.*`) của nhân vật lặp lại.
 - **QA Gate**: chặn `09-assembly-delivery` nếu `qa-report.md` còn FAILED; điều phối vòng fix (tối đa 3 vòng theo config).
 
 ### Bước 5: Bàn giao
@@ -95,7 +95,7 @@ Phản hồi điều phối gồm 3 phần, ngắn gọn:
 - KHÔNG tự viết kịch bản, prompt, bible — gọi skill chuyên trách.
 - KHÔNG nhảy cóc thứ tự bước trong mode Full.
 - KHÔNG cho qua Bible Gate hay QA Gate vì "thấy gần đúng".
-- KHÔNG áp dụng giá trị mặc định im lặng — mọi tham số (engine, mode, aspect_ratio, duration, language, platform) phải qua lựa chọn của người dùng.
+- KHÔNG áp dụng giá trị mặc định im lặng — mọi tham số (engine, mode, character_source, aspect_ratio, duration, language, platform) phải qua lựa chọn của người dùng.
 
 ### Quality Checklist (tự kiểm trước khi kết thúc lượt)
 - [ ] Đã đọc config.md (danh mục đề xuất + giới hạn validate).
