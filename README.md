@@ -30,7 +30,9 @@ Khi nghịch với AI assistants, prompt và workflow thường xuất hiện r�
 Repo này gom các thử nghiệm vào cấu trúc đủ gọn để dễ tìm lại và tiếp tục chỉnh sửa:
 
 - `.agents/skills/`: nơi lưu các skill đang hoạt động dạng `SKILL.md`, có thể đi kèm `references/`.
-- `other-skills/`: kho nhóm skill theo pipeline chưa kích hoạt (`apk-skills/`, `video-skills/`) và skill độc lập (`security-scan/`), copy sang `.agents/skills/` khi muốn dùng.
+- `.agents/commands/`: nơi lưu các command/prompt tác vụ hỗ trợ cho AI assistant.
+- `other-skills/`: kho nhóm skill chuyên biệt theo pipeline (`marketing-skills/`, `video-skills/`, `apk-skills/`) và skill độc lập (`security-scan/`), copy sang `.agents/skills/` khi muốn dùng.
+- `docs/`: tài liệu quy trình, hướng dẫn cài đặt và xử lý kỹ thuật.
 - `draft_output/`: nơi lưu output, ghi chú, bản so sánh hoặc kết quả thử nghiệm.
 
 ## Cài đặt
