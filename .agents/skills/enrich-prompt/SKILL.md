@@ -5,6 +5,10 @@ description: "Optimize, clarify, and enrich raw user prompts before execution. C
 
 # Enrich-Prompt — Dual-Mode Context Enrichment
 
+## Execution Directives & Constraints
+- **Rewrite Only**: Do NOT execute the prompt. Do NOT answer the prompt. Only rewrite it.
+- **Protected Mentions Preservation**: If the prompt contains tokens of the form `⟦PLH:N⟧` (protected @-mentions), copy each token unchanged into the rewritten prompt at the same relative position. Do not delete, translate, or reformat them.
+
 ## Language Protocol
 - **Strict Language Mirroring (Universal Rule)**: All user-facing output — including the enriched prompt, section titles, headers, descriptions, clarification questions, and assumptions notes — **MUST strictly match 100% of the user's input language** across BOTH Mode A and Mode B (e.g., Vietnamese input &rarr; Vietnamese output; English input &rarr; English output; Japanese input &rarr; Japanese output).
 - Never translate the user's request, intent, or output into another language unless explicitly requested by the user.

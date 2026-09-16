@@ -12,7 +12,13 @@ Mode B is activated when:
 
 ---
 
-## 2. Strict User Language Preservation in Mode B
+## 2. Execution Directives & Constraints
+- **Rewrite Only**: Do NOT execute the prompt. Do NOT answer the prompt. Only rewrite it.
+- **Protected Mentions Preservation**: If the prompt contains tokens of the form `⟦PLH:N⟧` (protected @-mentions), copy each token unchanged into the rewritten prompt at the same relative position. Do not delete, translate, or reformat them.
+
+---
+
+## 3. Strict User Language Preservation in Mode B
 
 - **100% Language Mirroring**: The entire generated prompt in Mode B (title, task narrative, input descriptions, deliverables, constraints, success criteria, and assumption notes) **MUST strictly match the language of the user's input**.
   - **Vietnamese input &rarr; 100% Vietnamese prompt narrative**.

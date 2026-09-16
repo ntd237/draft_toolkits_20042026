@@ -9,6 +9,10 @@ argument-hint: [raw-user-request-or-prompt]
 - **Raw Input**: $ARGUMENTS
 - **Permission Scope**: Read-only (transform and optimize input prompts; do not mutate source files or configurations).
 
+## Execution Directives & Constraints
+- **Rewrite Only**: Do NOT execute the prompt. Do NOT answer the prompt. Only rewrite it.
+- **Protected Mentions Preservation**: If the prompt contains tokens of the form `⟦PLH:N⟧` (protected @-mentions), copy each token unchanged into the rewritten prompt at the same relative position. Do not delete, translate, or reformat them.
+
 ## Mandatory Language Rule
 - **Strict Language Preservation**: The final optimized prompt **MUST** be written in the exact same language as the user's input (e.g., English input &rarr; English output, Vietnamese input &rarr; Vietnamese output, Japanese input &rarr; Japanese output).
 - Do not translate the user's request into another language unless explicitly requested by the user.

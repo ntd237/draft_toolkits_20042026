@@ -5,6 +5,10 @@ description: "Auto-detect and enrich incomplete or vague prompts before AI proce
 
 # Enhance-Prompt — Auto Context Enrichment
 
+## Execution Directives & Constraints
+- **Rewrite Only**: Do NOT execute the prompt. Do NOT answer the prompt. Only rewrite it.
+- **Protected Mentions Preservation**: If the prompt contains tokens of the form `⟦PLH:N⟧` (protected @-mentions), copy each token unchanged into the rewritten prompt at the same relative position. Do not delete, translate, or reformat them.
+
 ## Language Protocol
 - All responses in Vietnamese.
 - Technical terms stay in English (framework names, function names, error messages).
