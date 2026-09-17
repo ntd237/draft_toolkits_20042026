@@ -71,6 +71,15 @@ Mỗi skill khi thực thi bắt buộc phải nhận hoặc trích xuất `clie
 - Dữ liệu đầu ra của Nhóm Ads/SEO (C) và CRM (D) đổ về Nhóm Analytics (E).
 - Kết quả chẩn đoán của Nhóm Analytics & CRO (E) phản hồi ngược về Nhóm Content (B), Ads (C) hoặc CRM (D) để tối ưu chu kỳ tiếp theo.
 
+### 3.4. Chính sách Thu thập Dữ liệu & Vượt rào cản Kỹ thuật (Data Ingestion & Anti-bot Policy)
+Khi thu thập dữ liệu nghiên cứu thị trường và đối thủ từ các nền tảng có cơ chế bảo mật cao (Meta Ads Library, Google Ads Transparency, TikTok, Single Page Apps có Cloudflare/Captcha):
+- **Chiến lược 3 tầng (3-Tier Ingestion Strategy)**:
+  - **Tier 1 (Public Web & Search Discovery)**: Ưu tiên đọc trực tiếp Landing Page công khai, Website thương hiệu, báo chí, diễn đàn hoặc tra cứu qua Search Engine (`search_web`).
+  - **Tier 2 (Browser Automation)**: Nếu môi trường tích hợp công cụ trình duyệt (MCP Playwright / Headless Browser), khởi chạy trình duyệt để render dynamic DOM và chụp ảnh màn hình.
+  - **Tier 3 (Human-in-the-Loop Fallback - Bắt buộc khi bị chặn)**: Nếu gặp rào cản kỹ thuật (403, Login wall, Cloudflare, CAPTCHA, WAF), Agent tuyệt đối không dừng báo lỗi cụt hoặc bịa đặt số liệu. Agent PHẢI kích hoạt kịch bản hỗ trợ người dùng:
+    - Giải thích nguyên nhân ngắn gọn do cơ chế chống bot của nền tảng.
+    - Hướng dẫn người dùng cung cấp dữ liệu qua 1 trong 3 kênh: (1) Ảnh chụp màn hình mẫu ads/thư viện quảng cáo, (2) Đường dẫn Landing page sản phẩm trực tiếp, (3) Copy-paste trực tiếp headline/body text/offer.
+
 ---
 
 ## 4. Chính sách Kiểm định & Ngưỡng Kỹ thuật (Validation Policy)
@@ -79,6 +88,8 @@ Mỗi skill khi thực thi bắt buộc phải nhận hoặc trích xuất `clie
 |---|---|---|
 | `persona_count_range` | 2 – 4 persona | Tối thiểu 2 persona, tối đa 4 persona mỗi dự án để tránh phân mảnh |
 | `competitor_analysis_count` | 3 – 5 đối thủ | Cần ít nhất 3 đối thủ trực tiếp/gián tiếp để lập ma trận gap |
+| `data_ingestion_tiers` | Tier 1 -> Tier 2 -> Tier 3 | Bắt buộc kích hoạt Fallback Tier 3 khi gặp rào cản anti-bot |
+| `max_bot_retry_count` | 1 lần | Không retry lặp vô ích khi bị 403 / Cloudflare / Login wall |
 | `short_copy_variants` | 3 – 5 biến thể / góc | Bắt buộc có các góc tiếp cận khác nhau (AIDA, PAS, BAB, FAB) |
 | `longform_seo_word_count` | 1.500 – 3.500 từ | Bài pillar tối thiểu 2.000 từ, bài cluster tối thiểu 1.200 từ |
 | `brand_voice_pass_score` | 80 / 100 điểm | Dưới 80 điểm bắt buộc chỉnh sửa trước khi publish |
