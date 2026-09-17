@@ -41,6 +41,14 @@ def enable_dpi_awareness() -> bool:
     if platform.system() != "Windows":
         return False
 
+    try:
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenInputDesktop(0, False, 0x01FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+    except Exception:
+        pass
+
     # Attempt Per-Monitor V2 awareness (Windows 10 1703+)
     try:
         ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
