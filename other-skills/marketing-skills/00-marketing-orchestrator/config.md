@@ -71,6 +71,31 @@ Mỗi skill khi thực thi bắt buộc phải nhận hoặc trích xuất `clie
 - Dữ liệu đầu ra của Nhóm Ads/SEO (C) và CRM (D) đổ về Nhóm Analytics (E).
 - Kết quả chẩn đoán của Nhóm Analytics & CRO (E) phản hồi ngược về Nhóm Content (B), Ads (C) hoặc CRM (D) để tối ưu chu kỳ tiếp theo.
 
+### 3.4. Chính sách Thu thập Dữ liệu & Vượt rào cản Kỹ thuật (Data Ingestion & Anti-bot Policy)
+Khi thu thập dữ liệu nghiên cứu thị trường và đối thủ từ các nền tảng có cơ chế bảo mật cao (Meta Ads Library, Google Ads Transparency, TikTok, Single Page Apps có Cloudflare/Captcha):
+- **Chiến lược 3 tầng (3-Tier Ingestion Strategy)**:
+  - **Tier 1 (Public Web & Search Discovery)**: Ưu tiên đọc trực tiếp Landing Page công khai, Website thương hiệu, báo chí, diễn đàn hoặc tra cứu qua Search Engine (`search_web`).
+  - **Tier 2 (Browser Automation — Browser Subagent First, MCP Fallback)**:
+    - **Ưu tiên 1 (Antigravity Browser Subagent)**: Luôn ưu tiên sử dụng Browser Subagent của Antigravity IDE (`browser` subagent, được cấu hình trong `Browser Settings`, yêu cầu cài đặt Google Chrome và bật `Enable Browser Tools`). Subagent này tận dụng trình duyệt Chrome thật trên máy để duyệt web, render JavaScript và tương tác với trang.
+    - **Ưu tiên 2 (Playwright MCP Fallback)**: Nếu Browser Subagent chưa được bật hoặc cần thực thi automation trực tiếp trong session hiện tại, fallback sang sử dụng MCP server `playwright` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`).
+  - **Tier 3 (Human-in-the-Loop Fallback - Bắt buộc khi bị chặn hoàn toàn)**: Nếu cả 2 cấp độ browser trên đều gặp rào cản kỹ thuật nghiêm ngặt (403, Login wall, Cloudflare, CAPTCHA, WAF), Agent tuyệt đối không dừng báo lỗi cụt hoặc bịa đặt số liệu. Agent PHẢI kích hoạt kịch bản hỗ trợ người dùng:
+    - Giải thích nguyên nhân ngắn gọn do cơ chế chống bot của nền tảng.
+    - Hướng dẫn người dùng cung cấp dữ liệu qua 1 trong 3 kênh: (1) Ảnh chụp màn hình mẫu ads/thư viện quảng cáo, (2) Đường dẫn Landing page sản phẩm trực tiếp, (3) Copy-paste trực tiếp headline/body text/offer.
+
+### 3.5. Cấu hình Tương thích Môi trường Antigravity IDE (Antigravity Runtime Profile)
+Để bộ toolkit hoạt động tối ưu trên môi trường **Antigravity IDE**:
+- **Browser Subagent của Antigravity IDE (Google Chrome Integration)**:
+  - Cấu hình tại mục `Browser Settings` trong Antigravity IDE:
+    - Yêu cầu: Đã cài đặt **Google Chrome**.
+    - Bật tùy chọn: `Enable Browser Tools: ON`.
+    - Chính sách thực thi JavaScript: `Browser Javascript Execution Policy: Always Proceed`.
+  - Khi cần bóc tách các trang web động phức tạp (SPA) hoặc cần tương tác người dùng, gọi trực tiếp `browser` subagent thông qua `invoke_subagent`.
+- **Fallback sang MCP Playwright**:
+  - Khi không kích hoạt browser subagent hoặc cần chạy các tool tự động hóa cấp thấp, kích hoạt MCP server `playwright` có sẵn trong Antigravity IDE (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`).
+  - Sử dụng `browser_snapshot` để đọc accessibility tree và `browser_take_screenshot` để lưu bằng chứng đồ họa.
+- **Xử lý Đa phương thức (Multimodal Vision)**:
+  - Tận dụng khả năng đọc ảnh trực tiếp của Antigravity IDE: Cho phép người dùng dán (paste) ảnh chụp màn hình thư viện quảng cáo từ clipboard, Agent tự động phân tích hình ảnh để bóc tách thông điệp, hook, offer và visual style.
+
 ---
 
 ## 4. Chính sách Kiểm định & Ngưỡng Kỹ thuật (Validation Policy)
@@ -79,6 +104,9 @@ Mỗi skill khi thực thi bắt buộc phải nhận hoặc trích xuất `clie
 |---|---|---|
 | `persona_count_range` | 2 – 4 persona | Tối thiểu 2 persona, tối đa 4 persona mỗi dự án để tránh phân mảnh |
 | `competitor_analysis_count` | 3 – 5 đối thủ | Cần ít nhất 3 đối thủ trực tiếp/gián tiếp để lập ma trận gap |
+| `browser_tool_priority` | Browser Subagent (Google Chrome) -> Playwright MCP -> Human Fallback | Thứ tự ưu tiên bắt buộc khi xử lý trang web động / chặn bot |
+| `data_ingestion_tiers` | Tier 1 -> Tier 2 -> Tier 3 | Bắt buộc kích hoạt Fallback Tier 3 khi gặp rào cản anti-bot |
+| `max_bot_retry_count` | 1 lần | Không retry lặp vô ích khi bị 403 / Cloudflare / Login wall |
 | `short_copy_variants` | 3 – 5 biến thể / góc | Bắt buộc có các góc tiếp cận khác nhau (AIDA, PAS, BAB, FAB) |
 | `longform_seo_word_count` | 1.500 – 3.500 từ | Bài pillar tối thiểu 2.000 từ, bài cluster tối thiểu 1.200 từ |
 | `brand_voice_pass_score` | 80 / 100 điểm | Dưới 80 điểm bắt buộc chỉnh sửa trước khi publish |
