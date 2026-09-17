@@ -80,6 +80,16 @@ Khi thu thập dữ liệu nghiên cứu thị trường và đối thủ từ c
     - Giải thích nguyên nhân ngắn gọn do cơ chế chống bot của nền tảng.
     - Hướng dẫn người dùng cung cấp dữ liệu qua 1 trong 3 kênh: (1) Ảnh chụp màn hình mẫu ads/thư viện quảng cáo, (2) Đường dẫn Landing page sản phẩm trực tiếp, (3) Copy-paste trực tiếp headline/body text/offer.
 
+### 3.5. Cấu hình Tương thích Môi trường Antigravity IDE (Antigravity Runtime Profile)
+Để bộ toolkit hoạt động tối ưu trên môi trường **Antigravity IDE**:
+- **Tích hợp MCP Playwright**:
+  - Tận dụng MCP server `playwright` có sẵn trong Antigravity IDE để tự động hóa trình duyệt qua các tool: `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_fill_form`.
+  - Hỗ trợ tải snapshot cây Accessibility (`browser_snapshot`) để bóc tách text, headline, CTA của các trang render client-side (SPA).
+- **Lệnh tắt `/browser` (Slash Command)**:
+  - Khi người dùng gặp rào cản xác thực hoặc CAPTCHA trên Meta Ads Library / TikTok, Agent chủ động gợi ý người dùng sử dụng lệnh `/browser` trong chat UI để mở phiên duyệt web có giao diện hoặc gắn vào session trình duyệt cá nhân.
+- **Xử lý Đa phương thức (Multimodal Vision)**:
+  - Tận dụng khả năng đọc ảnh trực tiếp của Antigravity IDE: Cho phép người dùng dán (paste) ảnh chụp màn hình thư viện quảng cáo từ clipboard, Agent tự động phân tích hình ảnh để bóc tách thông điệp, hook, offer và visual style.
+
 ---
 
 ## 4. Chính sách Kiểm định & Ngưỡng Kỹ thuật (Validation Policy)

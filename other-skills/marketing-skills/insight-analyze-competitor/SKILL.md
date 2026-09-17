@@ -21,13 +21,17 @@ Kích hoạt khi người dùng yêu cầu "phân tích đối thủ", "competit
 - Phân loại đối thủ: Đối thủ trực tiếp (cùng sản phẩm, cùng phân khúc), Đối thủ gián tiếp (khác sản phẩm nhưng giải quyết cùng nhu cầu), Đối thủ tiềm năng (chiếm lĩnh thị phần truyền thông).
 - **Quy trình thu thập dữ liệu 3 tầng (3-Tier Data Ingestion Strategy)** tuân thủ `config.md`:
   - **Tầng 1 (Public Web & Search Discovery)**: Ưu tiên quét các nguồn mở không chặn bot: Website chính thức, Landing Page sản phẩm, bài viết PR/báo chí, đánh giá cộng đồng bằng `search_web` hoặc công cụ đọc URL.
-  - **Tầng 2 (Browser Automation)**: Nếu môi trường có hỗ trợ công cụ trình duyệt (MCP Playwright / Headless Browser), khởi chạy trình duyệt để render trang động (SPA), cuộn trang và đọc nội dung hoặc chụp ảnh màn hình.
-  - **Tầng 3 (Human-in-the-Loop Fallback khi gặp rào cản Anti-bot)**:
-    - Các nền tảng như **Meta Ads Library**, **Google Ads Transparency**, **TikTok** có cơ chế bảo vệ nghiêm ngặt (Single Page App React, Cloudflare, chống scraper, login wall/captcha) khiến các request tự động thường bị chặn (lỗi 403, trang trắng hoặc yêu cầu đăng nhập).
-    - **Khi gặp rào cản này, Agent KHÔNG dừng lại báo lỗi cụt hoặc tự bịa đặt thông tin quảng cáo**, mà **PHẢI** giải thích ngắn gọn nguyên nhân kỹ thuật và chủ động hướng dẫn người dùng cung cấp dữ liệu qua 1 trong 3 cách:
-      1. *Chụp ảnh màn hình (Screenshot)*: Chụp 2-3 mẫu quảng cáo đối thủ đang chạy trong Ads Library gửi vào chat (Agent dùng khả năng phân tích hình ảnh để bóc tách).
-      2. *Cung cấp link Landing page*: Gửi trực tiếp link trang đích của quảng cáo (thay vì link thư viện ads).
-      3. *Copy-paste text*: Dán trực tiếp các mẫu headline, hook, offer của đối thủ vào khung chat.
+  - **Tầng 2 (Browser Automation — Tương thích Antigravity IDE)**:
+    - Nếu môi trường chạy trên **Antigravity IDE**: Tận dụng MCP server `playwright` với các tool `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`.
+    - Điều hướng tới URL landing page hoặc website đối thủ, trích xuất cấu trúc accessibility tree qua `browser_snapshot` để đọc nội dung render động (SPA) mà web fetch thông thường không đọc được.
+    - Sử dụng `browser_take_screenshot` để chụp ảnh lưu lại bằng chứng trực quan về bố cục và ưu đãi.
+  - **Tầng 3 (Human-in-the-Loop Fallback & Tương tác Antigravity IDE)**:
+    - Các nền tảng như **Meta Ads Library**, **Google Ads Transparency**, **TikTok** có cơ chế bảo vệ nghiêm ngặt (Single Page App React, Cloudflare, chống scraper, login wall/captcha) khiến các request tự động thường bị chặn (lỗi 403, trang trắng hoặc bắt xác thực).
+    - **Khi gặp rào cản này, Agent KHÔNG dừng lại báo lỗi cụt hoặc tự bịa đặt thông tin**, mà **PHẢI** giải thích ngắn gọn nguyên nhân kỹ thuật và hướng dẫn người dùng theo các cơ chế của Antigravity IDE:
+      1. *Sử dụng lệnh `/browser`*: Gợi ý người dùng gõ `/browser` trong chat UI Antigravity IDE để mở phiên duyệt web tương tác trực tiếp hoặc gắn vào trình duyệt cá nhân để vượt captcha/đăng nhập.
+      2. *Dán ảnh màn hình (Multimodal Vision)*: Người dùng chụp 2-3 mẫu quảng cáo đối thủ từ Meta Ads Library rồi dán (paste) trực tiếp vào khung chat. Agent tận dụng khả năng xử lý ảnh của mô hình để phân tích Hook, Angle, Visual và CTA.
+      3. *Cung cấp link Landing page*: Gửi link trang đích bán hàng của quảng cáo (thay vì link thư viện ads).
+      4. *Copy-paste text*: Dán trực tiếp các mẫu headline, hook, offer của đối thủ vào chat.
 
 ### Giai đoạn 2: Lập Ma trận So sánh & Bóc tách Chiến lược
 **Mục tiêu**: Đánh giá đa chiều trên các trụ cột chiến lược tiếp thị.

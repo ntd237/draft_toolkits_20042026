@@ -87,3 +87,16 @@ marketing-skills/
 3. **Tuần 3-4 — Sản xuất Đa kênh**: Viết bài SEO, sáng tạo short copy, brief creative, thiết kế email flow -> Qua **Pre-Launch QA Gate**.
 4. **Tuần 5 — Triển khai Chiến dịch**: Phân tệp danh sách CRM, launch Ads, khởi chạy Email flow.
 5. **Tuần 6 — Đo lường & Tối ưu hóa**: Lập báo cáo đa kênh, chẩn đoán nguyên nhân nếu CPA tăng vọt, audit landing page và thiết kế A/B testing -> Đóng vòng lặp phản hồi cho chiến dịch tiếp theo.
+
+---
+
+## 4. Tương Thích & Vận Hành Trên Antigravity IDE
+
+Bộ skill được tối ưu hóa đặc biệt để vận hành mượt mà trên **Antigravity IDE**:
+
+- **Tự động hóa trình duyệt (Playwright MCP)**:
+  - Tích hợp sẵn với MCP server `playwright` để tự động mở, đọc dynamic DOM (`browser_snapshot`) và chụp ảnh màn hình (`browser_take_screenshot`) đối với các website/landing page render bằng JavaScript (React, Vue, SPA).
+- **Lệnh tắt `/browser` (Slash Command)**:
+  - Khi nghiên cứu đối thủ trên các nền tảng có cơ chế chống bot gắt gao (Meta Ads Library, TikTok, Cloudflare CAPTCHA), người dùng có thể gõ trực tiếp lệnh `/browser` trong Antigravity IDE để mở phiên duyệt web tương tác hoặc gắn vào session cá nhân để vượt captcha.
+- **Xử lý Đa phương thức (Multimodal Vision)**:
+  - Hỗ trợ dán (paste) trực tiếp ảnh chụp màn hình từ clipboard hoặc kéo thả file ảnh ads vào khung chat. AI sẽ tự động kích hoạt thị giác máy tính để phân tích bố cục, Hook 3s, thông điệp và Offer của đối thủ.
