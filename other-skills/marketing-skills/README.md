@@ -10,10 +10,9 @@ Toàn bộ các skill được lưu trữ tại `other-skills/marketing-skills/`
 
 ```
 marketing-skills/
-├── config.md                              # Cấu hình trung tâm (Single Source of Truth)
 ├── 00-marketing-orchestrator/            # Master Orchestrator điều phối chiến dịch end-to-end
-│   ├── SKILL.md
-│   └── config.md
+│   ├── SKILL.md                          # Kịch bản điều phối toàn diện 22 skills
+│   └── config.md                         # Cấu hình trung tâm duy nhất (Single Source of Truth)
 │
 ├── [Nhóm A: Market & Customer Insight]
 │   ├── insight-build-icp/                 # Xây dựng chân dung ICP & Persona cards
