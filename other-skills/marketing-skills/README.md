@@ -92,11 +92,12 @@ marketing-skills/
 
 ## 4. Tương Thích & Vận Hành Trên Antigravity IDE
 
-Bộ skill được tối ưu hóa đặc biệt để vận hành mượt mà trên **Antigravity IDE**:
+Bộ skill được tối ưu hóa đặc biệt để vận hành mượt mà trên **Antigravity IDE** theo thứ tự ưu tiên:
 
-- **Tự động hóa trình duyệt (Playwright MCP)**:
-  - Tích hợp sẵn với MCP server `playwright` để tự động mở, đọc dynamic DOM (`browser_snapshot`) và chụp ảnh màn hình (`browser_take_screenshot`) đối với các website/landing page render bằng JavaScript (React, Vue, SPA).
-- **Lệnh tắt `/browser` (Slash Command)**:
-  - Khi nghiên cứu đối thủ trên các nền tảng có cơ chế chống bot gắt gao (Meta Ads Library, TikTok, Cloudflare CAPTCHA), người dùng có thể gõ trực tiếp lệnh `/browser` trong Antigravity IDE để mở phiên duyệt web tương tác hoặc gắn vào session cá nhân để vượt captcha.
-- **Xử lý Đa phương thức (Multimodal Vision)**:
-  - Hỗ trợ dán (paste) trực tiếp ảnh chụp màn hình từ clipboard hoặc kéo thả file ảnh ads vào khung chat. AI sẽ tự động kích hoạt thị giác máy tính để phân tích bố cục, Hook 3s, thông điệp và Offer của đối thủ.
+- **1. Browser Subagent của Antigravity IDE (Google Chrome Integration)**:
+  - Cấu hình tại mục `Browser Settings` trong Antigravity IDE (yêu cầu cài đặt Google Chrome, bật `Enable Browser Tools: ON`, `Browser Javascript Execution Policy: Always Proceed`).
+  - Agent gọi trực tiếp `browser` subagent để mở URL, duyệt web bằng Google Chrome thật trên máy tính, render dynamic DOM và tương tác với trang.
+- **2. Fallback sang Playwright MCP (Automated Headless)**:
+  - Nếu Browser Subagent chưa được cấu hình hoặc cần tự động hóa ngầm trong session, Agent tự động fallback sang MCP server `playwright` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) để trích xuất dynamic DOM và chụp ảnh màn hình trang web SPA.
+- **3. Xử lý Đa phương thức (Multimodal Vision Fallback)**:
+  - Khi cả 2 phương thức trên bị chặn bởi CAPTCHA nghiêm ngặt, người dùng có thể dán (paste) trực tiếp ảnh chụp màn hình ads từ clipboard vào khung chat. AI sẽ kích hoạt thị giác máy tính để bóc tách bố cục, Hook 3s, thông điệp và Offer của đối thủ.
