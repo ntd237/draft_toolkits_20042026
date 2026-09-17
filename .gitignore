@@ -2,3 +2,12 @@ docs/
 .debug/
 collection/
 workflow-toolkit-lite.md
+*.docx
+*.pdf
+*.jpg
+*.png
+*.mp4
+*.jpeg
+*.json
+icu-medical-record-generator/
+__pycache__/
