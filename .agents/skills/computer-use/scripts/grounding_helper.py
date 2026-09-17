@@ -339,3 +339,4 @@ def draw_grid_overlay(
         line_color=line_color,
         line_width=line_width,
     )
+    
