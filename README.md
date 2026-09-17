@@ -5,7 +5,7 @@
 ![Language](https://img.shields.io/badge/language-Vietnamese-green)
 ![Format](https://img.shields.io/badge/format-Markdown-informational)
 
-Không gian nháp để tôi gom, nghịch, test, sáng tạo và thử nghiệm các `prompts`, `skills` và `commands` cho AI assistants. Repo này đóng vai trò như một sandbox cá nhân để thử ý tưởng mới, tinh chỉnh workflow, lưu các phiên bản nháp và kiểm nghiệm prompt trước khi tái sử dụng ở nơi khác.
+Không gian nháp để tôi gom, nghịch, test, sáng tạo và thử nghiệm các `prompts` và `skills` cho AI assistants. Repo này đóng vai trò như một sandbox cá nhân để thử ý tưởng mới, tinh chỉnh workflow, lưu các phiên bản nháp và kiểm nghiệm prompt trước khi tái sử dụng ở nơi khác.
 
 ## Mục lục
 
@@ -30,8 +30,7 @@ Khi nghịch với AI assistants, prompt và workflow thường xuất hiện r�
 Repo này gom các thử nghiệm vào cấu trúc đủ gọn để dễ tìm lại và tiếp tục chỉnh sửa:
 
 - `.agents/skills/`: nơi lưu các skill đang hoạt động dạng `SKILL.md`, có thể đi kèm `references/`.
-- `.agents/commands/`: nơi lưu các command/prompt tác vụ hỗ trợ cho AI assistant.
-- `other-skills/`: kho nhóm skill chuyên biệt theo pipeline (`marketing-skills/`, `video-skills/`, `apk-skills/`) và skill độc lập (`security-scan/`), copy sang `.agents/skills/` khi muốn dùng.
+- `other-skills/`: kho nhóm skill chuyên biệt theo pipeline (`marketing-skills/`, `video-skills/`, `apk-skills/`), copy sang `.agents/skills/` khi muốn dùng.
 - `docs/`: tài liệu quy trình, hướng dẫn cài đặt và xử lý kỹ thuật.
 - `draft_output/`: nơi lưu output, ghi chú, bản so sánh hoặc kết quả thử nghiệm.
 
