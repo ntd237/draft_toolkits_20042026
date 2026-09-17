@@ -10,7 +10,7 @@ All execution phases within this skill MUST adhere strictly to the policies defi
 - **Skill Root Directory**: Dynamically resolved relative to the location of this skill directory (`<skill_root>/`).
 - **References Directory**: `<skill_root>/references/`
 - **Scripts Directory**: `<skill_root>/scripts/`
-- **Base Output Directory**: `docs/computer_use/` (relative to workspace root)
+- **Base Output Directory**: `docs/computer_use/` (relative to workspace root, NOT skill root)
 - **Screenshots Directory**: `docs/computer_use/screenshots/`
 - **Action Logs Directory**: `docs/computer_use/logs/`
 - **Supported Image Formats**: `.png`, `.jpg`, `.jpeg`
