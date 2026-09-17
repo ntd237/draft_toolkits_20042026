@@ -31,6 +31,8 @@ class ComputerUseConfig:
     image_max_dimension: int = 1920
     image_jpeg_quality: int = 85
     dpi_aware_enabled: bool = True
+    multi_monitor_failsafe: bool = True
+    clipboard_backup_enabled: bool = True
 
     # Validation Policy
     max_retry_attempts: int = 3

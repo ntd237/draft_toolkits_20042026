@@ -114,6 +114,7 @@ class ScreenCapture:
         self,
         monitor_index: int | None = None,
         region: tuple[int, int, int, int] | None = None,
+        window_hwnd: int | None = None,
         step_id: str = "step",
         resize_max: int | None = None,
     ) -> dict[str, Any]:
@@ -134,7 +135,16 @@ class ScreenCapture:
 
         monitors = self.get_monitors_info()
 
-        if region is not None:
+        if window_hwnd is not None and window_hwnd > 0:
+            rect = wintypes.RECT()
+            if user32.GetWindowRect(window_hwnd, ctypes.byref(rect)):
+                src_x = rect.left
+                src_y = rect.top
+                src_w = max(1, rect.right - rect.left)
+                src_h = max(1, rect.bottom - rect.top)
+            else:
+                return {"status": "error", "message": f"Failed to get window rect for hwnd {window_hwnd}"}
+        elif region is not None:
             src_x, src_y, src_w, src_h = region
         else:
             selected_monitor = None

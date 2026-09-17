@@ -17,30 +17,28 @@ Simulated mouse and keyboard events are low-level operating system input interru
   - Bottom-Left: `x <= 3 and y >= screen_height - 4`
   - Bottom-Right: `x >= screen_width - 4 and y >= screen_height - 4`
 
-### 1.3. Four-Corner Fail-Safe Check Implementation
+### 1.3. Multi-Monitor Four-Corner Fail-Safe Implementation
+In modern desktop environments with multi-monitor setups, users instinctively slam the mouse cursor to the nearest corner of whatever monitor they are looking at. The system enumerates all connected physical displays via `EnumDisplayMonitors` and verifies cursor boundaries against every monitor corner:
 
 ```python
-import pyautogui
-
-def check_failsafe_condition(screen_width: int, screen_height: int, tolerance: int = 3) -> bool:
-    """Verify whether the user has slammed the cursor into any screen corner to trigger an abort."""
-    x, y = pyautogui.position()
-    corners = [
-        (0, 0),                                      # Top-Left
-        (screen_width - 1, 0),                      # Top-Right
-        (0, screen_height - 1),                     # Bottom-Left
-        (screen_width - 1, screen_height - 1),      # Bottom-Right
-    ]
-    for cx, cy in corners:
-        if abs(x - cx) <= tolerance and abs(y - cy) <= tolerance:
-            return True
+def check_multimonitor_failsafe(cursor_pos: tuple[int, int], monitors: list[dict], tolerance: int = 3) -> bool:
+    """Verify whether the cursor is in any corner of ANY connected physical display."""
+    cx, cy = cursor_pos
+    for mon in monitors:
+        ml, mt = mon["left"], mon["top"]
+        mr = mon["left"] + mon["width"] - 1
+        mb = mon["top"] + mon["height"] - 1
+        corners = [(ml, mt), (mr, mt), (ml, mb), (mr, mb)]
+        for corner_x, corner_y in corners:
+            if abs(cx - corner_x) <= tolerance and abs(cy - corner_y) <= tolerance:
+                return True
     return False
 ```
 
-### 1.4. FailSafeException Protocol
-Upon catching `pyautogui.FailSafeException`:
+### 1.4. FailSafeTriggered Exception Protocol
+Upon catching `FailSafeTriggered`:
 1. Immediately abort pending input queues.
-2. Release all pressed mouse buttons and modifier keys (`mouseUp`, `keyUp` for Ctrl, Alt, Shift) to prevent stuck input states.
+2. Release all pressed mouse buttons (`mouse_up` for left, right, middle) and modifier keys (`key_up` for Ctrl, Alt, Shift, Win) to prevent stuck input states.
 3. Write an emergency audit record with status `ABORTED_BY_USER_FAILSAFE`.
 4. Relinquish total control to the user and present a clear termination notice.
 

@@ -20,6 +20,16 @@ kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
 kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
 user32.SetClipboardData.restype = ctypes.c_void_p
 user32.SetClipboardData.argtypes = [wintypes.UINT, ctypes.c_void_p]
+user32.GetClipboardData.restype = ctypes.c_void_p
+user32.GetClipboardData.argtypes = [wintypes.UINT]
+user32.IsClipboardFormatAvailable.restype = wintypes.BOOL
+user32.IsClipboardFormatAvailable.argtypes = [wintypes.UINT]
+user32.OpenClipboard.restype = wintypes.BOOL
+user32.OpenClipboard.argtypes = [wintypes.HWND]
+user32.CloseClipboard.restype = wintypes.BOOL
+user32.CloseClipboard.argtypes = []
+user32.EmptyClipboard.restype = wintypes.BOOL
+user32.EmptyClipboard.argtypes = []
 
 # Win32 Constants
 CF_UNICODETEXT = 13
@@ -53,6 +63,11 @@ VK_CODES: dict[str, int] = {
     "win": 0x5B,
     "windows": 0x5B,
     "capslock": 0x14,
+    "printscreen": 0x2C,
+    "prtscr": 0x2C,
+    "numlock": 0x90,
+    "scrolllock": 0x91,
+    "pause": 0x13,
     "f1": 0x70,
     "f2": 0x71,
     "f3": 0x72,
@@ -72,10 +87,64 @@ for c in "abcdefghijklmnopqrstuvwxyz":
     VK_CODES[c] = ord(c.upper())
 for d in "0123456789":
     VK_CODES[d] = ord(d)
+for i in range(10):
+    VK_CODES[f"numpad{i}"] = 0x60 + i
 
 FORBIDDEN_COMBINATIONS = [
     {"shift", "delete"},
 ]
+
+
+def get_clipboard_text() -> str | None:
+    """Retrieve UTF-16LE text from Win32 clipboard with retry loop."""
+    for _ in range(5):
+        if user32.OpenClipboard(0):
+            try:
+                if not user32.IsClipboardFormatAvailable(CF_UNICODETEXT):
+                    return None
+                h_mem = user32.GetClipboardData(CF_UNICODETEXT)
+                if not h_mem:
+                    return None
+                p_mem = kernel32.GlobalLock(h_mem)
+                if not p_mem:
+                    return None
+                try:
+                    return ctypes.wstring_at(p_mem)
+                finally:
+                    kernel32.GlobalUnlock(h_mem)
+            finally:
+                user32.CloseClipboard()
+        time.sleep(0.02)
+    return None
+
+
+def set_clipboard_text(text: str) -> bool:
+    """Store Unicode text string into Windows system clipboard with retry loop."""
+    opened = False
+    for _ in range(5):
+        if user32.OpenClipboard(0):
+            opened = True
+            break
+        time.sleep(0.02)
+
+    if not opened:
+        return False
+
+    try:
+        user32.EmptyClipboard()
+        encoded_bytes = (text + "\0").encode("utf-16le")
+        h_mem = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(encoded_bytes))
+        if not h_mem:
+            return False
+        p_mem = kernel32.GlobalLock(h_mem)
+        if not p_mem:
+            return False
+        ctypes.memmove(p_mem, encoded_bytes, len(encoded_bytes))
+        kernel32.GlobalUnlock(h_mem)
+        user32.SetClipboardData(CF_UNICODETEXT, h_mem)
+        return True
+    finally:
+        user32.CloseClipboard()
 
 
 class KeyboardController:
@@ -84,33 +153,24 @@ class KeyboardController:
     def __init__(self) -> None:
         self.config = get_config()
 
+    def get_clipboard_text(self) -> str | None:
+        """Retrieve UTF-16LE text from Win32 clipboard with retry loop."""
+        return get_clipboard_text()
+
     def set_clipboard_text(self, text: str) -> bool:
         """Store Unicode text string into Windows system clipboard."""
-        if not user32.OpenClipboard(0):
-            return False
-        try:
-            user32.EmptyClipboard()
-            encoded_bytes = (text + "\0").encode("utf-16le")
-            h_mem = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(encoded_bytes))
-            if not h_mem:
-                return False
-            p_mem = kernel32.GlobalLock(h_mem)
-            if not p_mem:
-                return False
-            ctypes.memmove(p_mem, encoded_bytes, len(encoded_bytes))
-            kernel32.GlobalUnlock(h_mem)
-            user32.SetClipboardData(CF_UNICODETEXT, h_mem)
-            return True
-        finally:
-            user32.CloseClipboard()
+        return set_clipboard_text(text)
 
-    def paste_text(self, text: str) -> dict[str, Any]:
+    def paste_text(self, text: str, restore_clipboard: bool = True) -> dict[str, Any]:
         """
         Paste arbitrary text through system clipboard and simulated Ctrl+V.
 
         Guarantees accurate rendering for Unicode, Vietnamese accents, and multi-line strings.
+        When restore_clipboard is True, backs up previous clipboard content and restores it after paste.
         """
         try:
+            previous_text = self.get_clipboard_text() if restore_clipboard else None
+
             if not self.set_clipboard_text(text):
                 return {"status": "error", "message": "Failed to set clipboard data"}
 
@@ -121,10 +181,44 @@ class KeyboardController:
             time.sleep(0.05)
             user32.keybd_event(VK_CODES["v"], 0, KEYEVENTF_KEYUP, 0)
             user32.keybd_event(VK_CODES["ctrl"], 0, KEYEVENTF_KEYUP, 0)
+
+            if restore_clipboard:
+                time.sleep(0.1)
+                if previous_text is not None:
+                    self.set_clipboard_text(previous_text)
+
             time.sleep(self.config.pause_between_actions)
 
             return {"status": "success", "action": "paste_text", "length": len(text)}
 
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+    def key_down(self, key_name: str) -> dict[str, Any]:
+        """Hold down a key without releasing."""
+        k = key_name.strip().lower()
+        vk = VK_CODES.get(k)
+        if vk is None:
+            return {"status": "error", "message": f"Unknown key name: '{key_name}'"}
+
+        try:
+            user32.keybd_event(vk, 0, 0, 0)
+            time.sleep(self.config.pause_between_actions)
+            return {"status": "success", "action": "key_down", "key": k}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+    def key_up(self, key_name: str) -> dict[str, Any]:
+        """Release a held key."""
+        k = key_name.strip().lower()
+        vk = VK_CODES.get(k)
+        if vk is None:
+            return {"status": "error", "message": f"Unknown key name: '{key_name}'"}
+
+        try:
+            user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+            time.sleep(self.config.pause_between_actions)
+            return {"status": "success", "action": "key_up", "key": k}
         except Exception as exc:
             return {"status": "error", "message": str(exc)}
 
@@ -229,4 +323,3 @@ class KeyboardController:
 if __name__ == "__main__":
     kc = KeyboardController()
     print("Keyboard controller initialized successfully.")
-    

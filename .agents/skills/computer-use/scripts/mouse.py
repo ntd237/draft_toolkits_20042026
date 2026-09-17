@@ -44,30 +44,114 @@ class MouseController:
         user32.GetCursorPos(ctypes.byref(pt))
         return (pt.x, pt.y)
 
+    def get_monitors(self) -> list[dict[str, Any]]:
+        """Retrieve geometry and bounds of all connected physical displays."""
+        monitors: list[dict[str, Any]] = []
+
+        try:
+            def _enum_proc(h_monitor: Any, hdc_monitor: Any, lprc_monitor: Any, dw_data: Any) -> bool:
+                rect = lprc_monitor.contents
+                monitors.append({
+                    "left": rect.left,
+                    "top": rect.top,
+                    "right": rect.right,
+                    "bottom": rect.bottom,
+                    "width": rect.right - rect.left,
+                    "height": rect.bottom - rect.top,
+                })
+                return True
+
+            monitor_enum_proc = ctypes.WINFUNCTYPE(
+                wintypes.BOOL,
+                wintypes.HMONITOR,
+                wintypes.HDC,
+                ctypes.POINTER(wintypes.RECT),
+                wintypes.LPARAM,
+            )
+            user32.EnumDisplayMonitors(None, None, monitor_enum_proc(_enum_proc), 0)
+        except Exception:
+            pass
+
+        if not monitors:
+            sw = user32.GetSystemMetrics(0)
+            sh = user32.GetSystemMetrics(1)
+            monitors.append({
+                "left": 0,
+                "top": 0,
+                "right": sw,
+                "bottom": sh,
+                "width": sw,
+                "height": sh,
+            })
+
+        return monitors
+
     def _check_failsafe(self) -> None:
-        """Check if cursor is positioned in any screen corner."""
+        """Check if cursor is positioned in any corner of any connected display."""
         if not self.config.failsafe_enabled:
             return
 
         cx, cy = self.get_position()
         tol = self.config.failsafe_corner_tolerance
 
-        # Primary display dimensions
-        sw = user32.GetSystemMetrics(0)  # SM_CXSCREEN
-        sh = user32.GetSystemMetrics(1)  # SM_CYSCREEN
+        monitors = self.get_monitors()
+        for mon in monitors:
+            ml = mon["left"]
+            mt = mon["top"]
+            mr = mon["right"] - 1 if "right" in mon else ml + mon["width"] - 1
+            mb = mon["bottom"] - 1 if "bottom" in mon else mt + mon["height"] - 1
 
-        corners = [
-            (0, 0),
-            (sw - 1, 0),
-            (0, sh - 1),
-            (sw - 1, sh - 1),
-        ]
+            corners = [
+                (ml, mt),
+                (mr, mt),
+                (ml, mb),
+                (mr, mb),
+            ]
 
-        for corner_x, corner_y in corners:
-            if abs(cx - corner_x) <= tol and abs(cy - corner_y) <= tol:
-                raise FailSafeTriggered(
-                    f"Mouse cursor at ({cx}, {cy}) triggered emergency failsafe corner ({corner_x}, {corner_y})."
-                )
+            for corner_x, corner_y in corners:
+                if abs(cx - corner_x) <= tol and abs(cy - corner_y) <= tol:
+                    raise FailSafeTriggered(
+                        f"Mouse cursor at ({cx}, {cy}) triggered emergency failsafe corner ({corner_x}, {corner_y})."
+                    )
+
+    def mouse_down(self, button: str = "left") -> dict[str, Any]:
+        """Press and hold mouse button without releasing."""
+        try:
+            self._check_failsafe()
+            btn = button.strip().lower()
+            flag_map = {
+                "left": MOUSEEVENTF_LEFTDOWN,
+                "right": MOUSEEVENTF_RIGHTDOWN,
+                "middle": MOUSEEVENTF_MIDDLEDOWN,
+            }
+            down_flag = flag_map.get(btn)
+            if down_flag is None:
+                return {"status": "error", "message": f"Unsupported mouse button: '{button}'"}
+
+            user32.mouse_event(down_flag, 0, 0, 0, 0)
+            return {"status": "success", "action": "mouse_down", "button": btn}
+        except FailSafeTriggered as e:
+            return {"status": "failsafe_aborted", "message": str(e)}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+    def mouse_up(self, button: str = "left") -> dict[str, Any]:
+        """Release a pressed mouse button."""
+        try:
+            btn = button.strip().lower()
+            flag_map = {
+                "left": MOUSEEVENTF_LEFTUP,
+                "right": MOUSEEVENTF_RIGHTUP,
+                "middle": MOUSEEVENTF_MIDDLEUP,
+            }
+            up_flag = flag_map.get(btn)
+            if up_flag is None:
+                return {"status": "error", "message": f"Unsupported mouse button: '{button}'"}
+
+            user32.mouse_event(up_flag, 0, 0, 0, 0)
+            return {"status": "success", "action": "mouse_up", "button": btn}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
 
     def move(self, x: int, y: int, duration: float | None = None) -> dict[str, Any]:
         """Move cursor smoothly to target coordinates with quadratic ease-in-out interpolation."""
@@ -225,3 +309,4 @@ class MouseController:
 if __name__ == "__main__":
     mc = MouseController()
     print("Current cursor position:", mc.get_position())
+    

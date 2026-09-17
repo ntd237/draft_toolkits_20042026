@@ -11,3 +11,5 @@ workflow-toolkit-lite.md
 *.json
 icu-medical-record-generator/
 __pycache__/
+tests/
+.pytest_cache/
