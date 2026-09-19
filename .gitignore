@@ -13,3 +13,6 @@ icu-medical-record-generator/
 __pycache__/
 tests/
 .pytest_cache/
+transactions/
+custom-instructions/
+prompt-injection-defense/
