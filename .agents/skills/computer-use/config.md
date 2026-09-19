@@ -25,7 +25,7 @@ All execution phases within this skill MUST adhere strictly to the policies defi
   - Example: `screen_20260916_143000_step01.png`
 - **Visual Diff File Pattern**: `diff_<timestamp>_<step_id>.png`
 - **Coordinate Grid Overlay File Pattern**: `overlay_<timestamp>_<step_id>.png`
-- **Session Log File Pattern**: `session_<timestamp>_<session_slug>.jsonl`
+- **Session Log File Pattern**: `session_<yyyymmdd>_<session_slug>.jsonl` — one JSONL audit line per CLI invocation; `<session_slug>` comes from the `COMPUTER_USE_SESSION_SLUG` environment variable (default: `default`).
 - **Coordinate Output Representation**:
   - Absolute Coordinates: `{"x": int, "y": int, "coord_type": "absolute"}`
   - Normalized Coordinates: `{"x_norm": float, "y_norm": float, "coord_type": "normalized", "scale": 1000}`
@@ -40,6 +40,8 @@ All execution phases within this skill MUST adhere strictly to the policies defi
 - `MULTI_MONITOR_FAILSAFE`: `True` (Enumerates and checks corners across all connected physical monitors).
 - `CLIPBOARD_BACKUP_ENABLED`: `True` (Safely backs up and restores pre-existing clipboard text during Unicode paste actions).
 - `FOCUS_GUARD_ENABLED`: `True` (Verifies target foreground window title before dispatching keystrokes or clicks).
+- `TYPE_TEXT_FALLBACK_PASTE`: `True` (`type` automatically falls back to one safe clipboard paste when text contains characters without virtual-key mapping, e.g. Unicode/Vietnamese).
+- `SESSION_SLUG_ENV`: `COMPUTER_USE_SESSION_SLUG` (Environment variable selecting the session log slug; default slug: `default`).
 - `PAUSE_BETWEEN_ACTIONS`: 0.5 seconds (minimum pause between consecutive low-level commands to allow UI rendering).
 - `DEFAULT_MOUSE_MOVE_DURATION`: 0.25 seconds (smooth mouse movement with quadratic ease-in-out curve).
 - `DEFAULT_TYPING_INTERVAL`: 0.05 seconds/character (simulating natural human typing speed).

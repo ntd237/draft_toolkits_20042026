@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from config_loader import get_config
+from sendinput import send_mouse
 
 user32 = ctypes.windll.user32
 
@@ -114,6 +115,30 @@ class MouseController:
                         f"Mouse cursor at ({cx}, {cy}) triggered emergency failsafe corner ({corner_x}, {corner_y})."
                     )
 
+    def _validate_coordinates(self, *points: tuple[int | None, int | None]) -> str | None:
+        """Validation Policy 4.1: every dispatched point must lie within one physical monitor.
+
+        Returns an error message when any provided point falls outside ALL connected
+        monitor boundaries, or None when all points are valid (or absent).
+        """
+        pts = [(p[0], p[1]) for p in points if p[0] is not None and p[1] is not None]
+        if not pts:
+            return None
+
+        monitors = self.get_monitors()
+        for x, y in pts:
+            inside_any = any(
+                mon["left"] <= x <= mon["left"] + mon["width"]
+                and mon["top"] <= y <= mon["top"] + mon["height"]
+                for mon in monitors
+            )
+            if not inside_any:
+                return (
+                    f"Coordinates ({x}, {y}) lie outside all connected monitor "
+                    "boundaries (Validation Policy 4.1). Action rejected."
+                )
+        return None
+
     def mouse_down(self, button: str = "left") -> dict[str, Any]:
         """Press and hold mouse button without releasing."""
         try:
@@ -128,7 +153,7 @@ class MouseController:
             if down_flag is None:
                 return {"status": "error", "message": f"Unsupported mouse button: '{button}'"}
 
-            user32.mouse_event(down_flag, 0, 0, 0, 0)
+            send_mouse(down_flag)
             return {"status": "success", "action": "mouse_down", "button": btn}
         except FailSafeTriggered as e:
             return {"status": "failsafe_aborted", "message": str(e)}
@@ -148,7 +173,7 @@ class MouseController:
             if up_flag is None:
                 return {"status": "error", "message": f"Unsupported mouse button: '{button}'"}
 
-            user32.mouse_event(up_flag, 0, 0, 0, 0)
+            send_mouse(up_flag)
             return {"status": "success", "action": "mouse_up", "button": btn}
         except Exception as exc:
             return {"status": "error", "message": str(exc)}
@@ -198,6 +223,10 @@ class MouseController:
     ) -> dict[str, Any]:
         """Click mouse button at current position or designated coordinates."""
         try:
+            validation_error = self._validate_coordinates((x, y))
+            if validation_error:
+                return {"status": "error", "message": validation_error}
+
             self._check_failsafe()
 
             if x is not None and y is not None:
@@ -218,9 +247,9 @@ class MouseController:
 
             for _ in range(clicks):
                 self._check_failsafe()
-                user32.mouse_event(down_flag, 0, 0, 0, 0)
+                send_mouse(down_flag)
                 time.sleep(0.05)
-                user32.mouse_event(up_flag, 0, 0, 0, 0)
+                send_mouse(up_flag)
                 if clicks > 1:
                     time.sleep(interval)
 
@@ -250,11 +279,15 @@ class MouseController:
     def drag(self, start_x: int, start_y: int, end_x: int, end_y: int, duration: float = 0.5) -> dict[str, Any]:
         """Drag with left button held from (start_x, start_y) to (end_x, end_y)."""
         try:
+            validation_error = self._validate_coordinates((start_x, start_y), (end_x, end_y))
+            if validation_error:
+                return {"status": "error", "message": validation_error}
+
             self._check_failsafe()
             self.move(start_x, start_y, duration=0.1)
             time.sleep(0.05)
 
-            user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            send_mouse(MOUSEEVENTF_LEFTDOWN)
             time.sleep(0.05)
 
             steps = max(5, int(duration * 60))
@@ -270,7 +303,7 @@ class MouseController:
 
             user32.SetCursorPos(end_x, end_y)
             time.sleep(0.05)
-            user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            send_mouse(MOUSEEVENTF_LEFTUP)
             time.sleep(self.config.pause_between_actions)
 
             return {
@@ -282,21 +315,25 @@ class MouseController:
 
         except FailSafeTriggered as e:
             # Ensure mouse button is released if failsafe triggers during drag
-            user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            send_mouse(MOUSEEVENTF_LEFTUP)
             return {"status": "failsafe_aborted", "message": str(e)}
         except Exception as exc:
-            user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            send_mouse(MOUSEEVENTF_LEFTUP)
             return {"status": "error", "message": str(exc)}
 
     def scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> dict[str, Any]:
         """Scroll vertical mouse wheel (positive: up, negative: down)."""
         try:
+            validation_error = self._validate_coordinates((x, y))
+            if validation_error:
+                return {"status": "error", "message": validation_error}
+
             self._check_failsafe()
             if x is not None and y is not None:
                 self.move(x, y)
 
             wheel_amount = clicks * WHEEL_DELTA
-            user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheel_amount, 0)
+            send_mouse(MOUSEEVENTF_WHEEL, wheel_amount)
             time.sleep(self.config.pause_between_actions)
             return {"status": "success", "action": "scroll", "clicks": clicks}
 

@@ -175,6 +175,21 @@ class VisualDiff:
                     raw1 = ctypes.string_at(bdata1.Scan0, total_bytes)
                     raw2 = ctypes.string_at(bdata2.Scan0, total_bytes)
 
+                    # Fast path: byte-identical frames (the common retry case) skip
+                    # the per-pixel scan and diff-image generation entirely.
+                    if raw1 == raw2:
+                        return {
+                            "status": "success",
+                            "width": width1,
+                            "height": height1,
+                            "total_pixels": total_pixels,
+                            "changed_pixels": 0,
+                            "change_ratio": 0.0,
+                            "has_changed": False,
+                            "threshold": threshold,
+                            "diff_output_path": None,
+                        }
+
                     arr1 = array.array("I")
                     arr1.frombytes(raw1)
                     arr2 = array.array("I")

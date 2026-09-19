@@ -9,16 +9,17 @@ Comprehensive guide specifying mandatory safety principles, emergency fail-safe 
 ### 1.1. Risks of Automated GUI Interactions
 Simulated mouse and keyboard events are low-level operating system input interrupts. If an AI agent encounters visual hallucinations, infinite decision loops, or misidentified interactive elements, unchecked cursor execution can cause rapid, unintended changes outside user control.
 
-### 1.2. PyAutoGUI Fail-Safe Behavior
-- **Mechanism**: When `pyautogui.FAILSAFE = True`, the library queries the current cursor position before dispatching any input event. If the mouse cursor is located in the top-left corner `(0, 0)`, the library immediately throws a `pyautogui.FailSafeException`.
-- **Four-Corner Extension**: In practical desktop operations, users naturally slam the mouse toward whichever screen corner is nearest. The safety module extends corner detection to all four display corners:
-  - Top-Left: `x <= 3 and y <= 3`
-  - Top-Right: `x >= screen_width - 4 and y <= 3`
-  - Bottom-Left: `x <= 3 and y >= screen_height - 4`
-  - Bottom-Right: `x >= screen_width - 4 and y >= screen_height - 4`
+### 1.2. Corner-Triggered Emergency Stop in This Skill
+- **Mechanism**: Before dispatching any input event — and again at every interpolation step of a cursor move or drag — the safety module (`MouseController._check_failsafe`) queries the current cursor position via `GetCursorPos`. If the cursor sits within `FAILSAFE_CORNER_TOLERANCE` (3 pixels) of any corner of ANY connected display, a `FailSafeTriggered` exception is raised; the CLI controller returns status `failsafe_aborted` with exit code 2.
+- **Four-Corner Detection**: In practical desktop operations, users naturally slam the mouse toward whichever screen corner is nearest. Corner detection therefore covers all four corners of every physical monitor, relative to each monitor's own bounds:
+  - Top-Left: `x <= left + 3 and y <= top + 3`
+  - Top-Right: `x >= right - 4 and y <= top + 3`
+  - Bottom-Left: `x <= left + 3 and y >= bottom - 4`
+  - Bottom-Right: `x >= right - 4 and y >= bottom - 4`
+- **Disable Prohibition**: `FAILSAFE_ENABLED` must never be set to `False` (see config.md and SKILL.md Don'ts).
 
 ### 1.3. Multi-Monitor Four-Corner Fail-Safe Implementation
-In modern desktop environments with multi-monitor setups, users instinctively slam the mouse cursor to the nearest corner of whatever monitor they are looking at. The system enumerates all connected physical displays via `EnumDisplayMonitors` and verifies cursor boundaries against every monitor corner:
+In modern desktop environments with multi-monitor setups, users instinctively slam the mouse cursor to the nearest corner of whatever monitor they are looking at. The system enumerates all connected physical displays via `EnumDisplayMonitors` (`MouseController.get_monitors`) and verifies cursor boundaries against every monitor corner:
 
 ```python
 def check_multimonitor_failsafe(cursor_pos: tuple[int, int], monitors: list[dict], tolerance: int = 3) -> bool:
@@ -105,8 +106,8 @@ Operating system window managers and web browsers require finite processing wind
 ### 4.1. Loss of Window Focus
 - **Symptom**: An unexpected notification, background update, or transient modal interrupts target focus.
 - **Remediation**:
-  1. Inspect the active window title (`GetActiveWindow()`).
-  2. If the active window differs from target application, pause mouse actions and attempt window refocus.
+  1. Inspect the active window title (`python scripts/controller.py window --check "<Expected_Title>"`, backed by `WindowManager.is_window_focused` via `GetForegroundWindow`).
+  2. If the active window differs from target application, pause mouse actions and attempt window refocus (`WindowManager.set_foreground_window`).
   3. If focus cannot be restored after 2 attempts, pause and alert the user.
 
 ### 4.2. Stale State / Unresponsive Click

@@ -33,6 +33,7 @@ class ComputerUseConfig:
     dpi_aware_enabled: bool = True
     multi_monitor_failsafe: bool = True
     clipboard_backup_enabled: bool = True
+    type_text_fallback_paste: bool = True
 
     # Validation Policy
     max_retry_attempts: int = 3

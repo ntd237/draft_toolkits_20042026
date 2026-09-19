@@ -1,6 +1,6 @@
 # Technical Reference: Coordinate Mapping, DPI Scaling, and Multi-Monitor Handling
 
-Technical guide detailing display coordinate mathematics, conversions between logical and physical coordinate spaces, coordinate normalization for Vision-Language Models (VLMs), and cross-platform compatibility solutions for Windows, macOS, and Linux.
+Technical guide detailing display coordinate mathematics, conversions between logical and physical coordinate spaces, and coordinate normalization for Vision-Language Models (VLMs), as implemented by this skill's pure Win32 (ctypes) scripts on Windows.
 
 ---
 
@@ -11,7 +11,7 @@ Technical guide detailing display coordinate mathematics, conversions between lo
 - **Axes**:
   - `X` Axis: Increases horizontally from left to right (`0 -> screen_width - 1`).
   - `Y` Axis: Increases vertically from top to bottom (`0 -> screen_height - 1`).
-- **Use Case**: Used directly by operating system input drivers and automation libraries (`PyAutoGUI`, `pynput`, `Win32 API`) to dispatch mouse movements and clicks.
+- **Use Case**: Used directly by operating system input drivers and automation APIs (Win32 `SetCursorPos`, `SendInput`) to dispatch mouse movements and clicks.
 - **Limitation**: Tightly coupled to hardware resolution; cannot be transferred across environments without scaling.
 
 ### 1.2. Normalized Coordinates
@@ -41,6 +41,8 @@ def absolute_to_normalized(abs_x: int, abs_y: int, width: int, height: int, scal
     return norm_x, norm_y
 ```
 
+These formulas are implemented in `scripts/grounding_helper.py` (`normalized_to_pixel` / `pixel_to_normalized`) with strict clamping within `[0, width - 1]` and `[0, height - 1]`.
+
 ### 1.4. Bounding Box Center Calculation
 When a vision model predicts an element bounding box `[ymin, xmin, ymax, xmax]` or `[x1, y1, x2, y2]`, the most reliable target click point is the **geometric center** to avoid clicking borders or margins:
 
@@ -51,20 +53,20 @@ $$x_{\text{click}} = \left\lfloor \frac{x_1 + x_2}{2} \right\rfloor, \quad y_{\t
 ## 2. DPI Scaling (Display Scaling)
 
 ### 2.1. Root Cause of DPI Drift
-On modern high-density panels (High-DPI, 2K, 4K, Retina), modern operating systems apply a display scale factor (125%, 150%, 200%) to maintain readable UI element sizes. This creates a disparity between:
+On modern high-density panels (High-DPI, 2K, 4K, Retina), Windows applies a display scale factor (125%, 150%, 200%) to maintain readable UI element sizes. This creates a disparity between:
 - **Physical Resolution**: Actual hardware panel pixels (e.g., $3840 \times 2160$).
 - **Logical Resolution (DIPs / Points)**: Virtualized coordinates reported to non-DPI-aware applications (e.g., at 150%: $2560 \times 1440$).
 
 ### 2.2. Coordinate Drift in Automation
-Without explicit DPI-awareness:
-1. Fast screen grabbers (`mss`) capture at **physical resolution** ($3840 \times 2160$).
+Without explicit DPI-awareness registered for the process:
+1. Native GDI capture (`BitBlt` from the screen DC) grabs the frame at **physical resolution** ($3840 \times 2160$).
 2. The AI vision model identifies a target button at $(1500, 800)$ on the physical image.
-3. `PyAutoGUI` dispatches the cursor to $(1500, 800)$ in **logical coordinate space**.
+3. `SetCursorPos` dispatches the cursor at $(1500, 800)$ in **logical coordinate space** (the coordinates a non-DPI-aware process sees).
 4. Result: The mouse clicks at physical location $(2250, 1200)$—completely missing the target!
 
 ### 2.3. Per-Monitor DPI Awareness Initialization on Windows
 
-Always execute DPI awareness registration before any screen capture or coordinate evaluation:
+Always execute DPI awareness registration before any screen capture or coordinate evaluation (implemented in `scripts/config_loader.py`):
 
 ```python
 import ctypes
@@ -89,9 +91,8 @@ def enable_dpi_awareness():
                 print(f"Failed to enable DPI awareness: {err}")
 ```
 
-### 2.4. macOS Retina Scaling
-On macOS, Pillow and PyAutoGUI operate in logical points, whereas `mss` captures raw Retina pixels (2x factor). Normalize coordinates via:
-$$\text{click\_x} = \frac{x_{\text{mss}}}{2}, \quad \text{click\_y} = \frac{y_{\text{mss}}}{2}$$
+### 2.4. DPI Awareness Cascade in This Skill
+`scripts/config_loader.py` attempts the three awareness levels in order (Per-Monitor V2 → Shcore Per-Monitor → basic `SetProcessDPIAware`) and stops at the first success. Once any level is active, `GetSystemMetrics`, `EnumDisplayMonitors`, `GetWindowRect`, and `SetCursorPos` all operate in the **same physical coordinate space** as the GDI capture, so no post-hoc scale compensation is required for the raw screen image. The only remaining scale factor is the **VLM downscale** (`IMAGE_MAX_DIMENSION = 1920`), compensated via `scale_factor` during mapping.
 
 ---
 
@@ -114,21 +115,23 @@ Multi-monitor configurations are represented as a unified virtual desktop rectan
                  └────────────────────────┘      └──────────────────────┘
 ```
 
-### 3.2. Monitor Representation in `mss`
-In `mss`, monitor indices follow this convention:
-- `monitors[0]`: Entire virtual desktop encompassing all connected displays.
-- `monitors[1]`: Primary monitor.
-- `monitors[2..N]`: Additional secondary displays.
+### 3.2. Monitor Enumeration in This Skill
+`scripts/screen.py` (`ScreenCapture.get_monitors_info()`) enumerates monitors with this convention:
+- `index 0`: Entire virtual desktop bounding box (from `SM_XVIRTUALSCREEN`/`SM_YVIRTUALSCREEN`/`SM_CXVIRTUALSCREEN`/`SM_CYVIRTUALSCREEN`, metrics 76–79).
+- `index 1`: Primary monitor.
+- `index 2..N`: Additional physical displays, enumerated via `EnumDisplayMonitors`.
 
 Each monitor profile provides:
 ```python
-{"left": int, "top": int, "width": int, "height": int}
+{"index": int, "left": int, "top": int, "width": int, "height": int, "is_virtual_all": bool}
 ```
+
+`MouseController.get_monitors()` (`scripts/mouse.py`) exposes the same physical monitors (without the virtual entry) for failsafe corner checks and coordinate boundary validation.
 
 ### 3.3. Mapping Local Bounding Boxes to Global Coordinates
 
 When targeting a specific monitor `K`:
-1. Capture target display: `bbox = sct.monitors[K]`.
+1. Capture target display: `python scripts/controller.py screen --monitor K --step <step_id>`.
 2. Vision model infers local coordinates `(local_x, local_y)` relative to that screenshot.
 3. Compute global dispatch coordinates by adding monitor offsets:
    $$x_{\text{global}} = \text{left}_K + \text{local\_x}$$
@@ -146,12 +149,12 @@ def map_local_to_global_coords(local_x: int, local_y: int, monitor_info: dict) -
 
 ## 4. End-to-End Safe Coordinate Resolution Pipeline
 
-1. **Bootstrap**: Execute `enable_dpi_awareness()`.
-2. **Identify Target Monitor**: Retrieve display geometry via `mss.monitors`.
-3. **Capture**: Capture image and record metadata `(width, height, left, top)`.
-4. **Model Optimization**: Resize if dimensions exceed threshold (`IMAGE_MAX_DIMENSION = 1920`) and preserve `scale_factor`.
+1. **Bootstrap**: `config_loader.get_config()` runs `enable_dpi_awareness()` before anything else.
+2. **Identify Target Monitor**: `python scripts/controller.py info` returns all monitor geometry and the foreground window.
+3. **Capture**: `python scripts/controller.py screen --monitor <K> --step <step_id>` saves the image and returns metadata `(original_width, original_height, scale_factor, monitor_left, monitor_top)`.
+4. **VLM Optimization**: Captures larger than `IMAGE_MAX_DIMENSION = 1920` are downscaled; the returned `scale_factor` (scaled / original) must be preserved.
 5. **Inference Unpacking**:
-   - For resized image coordinates: `orig_x = model_x / scale_factor`.
+   - For resized-image coordinates: `orig_x = model_x / scale_factor`.
    - For 1000-point normalized values: `orig_x = (norm_x / 1000) * width`.
-6. **Offset Compensation**: Add display origins: `target_x = orig_x + monitor["left"]`.
-7. **Boundary Guard**: Validate that target coordinates reside within valid display geometry before clicking.
+6. **Offset Compensation**: `python scripts/controller.py map --norm-x <x> --norm-y <y> --width <w> --height <h> --scale-factor <sf> --monitor-left <left> --monitor-top <top>` returns `desktop_x, desktop_y` in global coordinates.
+7. **Boundary Guard (enforced)**: `MouseController` validates that every dispatched point lies within one physical monitor (Validation Policy 4.1) and rejects out-of-bounds coordinates with an error before any input event is sent.

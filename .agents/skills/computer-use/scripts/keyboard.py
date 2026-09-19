@@ -8,6 +8,7 @@ import time
 from typing import Any
 
 from config_loader import get_config
+from sendinput import send_key
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -176,11 +177,11 @@ class KeyboardController:
 
             time.sleep(0.05)
             # Dispatch Ctrl+V
-            user32.keybd_event(VK_CODES["ctrl"], 0, 0, 0)
-            user32.keybd_event(VK_CODES["v"], 0, 0, 0)
+            send_key(VK_CODES["ctrl"])
+            send_key(VK_CODES["v"])
             time.sleep(0.05)
-            user32.keybd_event(VK_CODES["v"], 0, KEYEVENTF_KEYUP, 0)
-            user32.keybd_event(VK_CODES["ctrl"], 0, KEYEVENTF_KEYUP, 0)
+            send_key(VK_CODES["v"], KEYEVENTF_KEYUP)
+            send_key(VK_CODES["ctrl"], KEYEVENTF_KEYUP)
 
             if restore_clipboard:
                 time.sleep(0.1)
@@ -202,7 +203,7 @@ class KeyboardController:
             return {"status": "error", "message": f"Unknown key name: '{key_name}'"}
 
         try:
-            user32.keybd_event(vk, 0, 0, 0)
+            send_key(vk)
             time.sleep(self.config.pause_between_actions)
             return {"status": "success", "action": "key_down", "key": k}
         except Exception as exc:
@@ -216,7 +217,7 @@ class KeyboardController:
             return {"status": "error", "message": f"Unknown key name: '{key_name}'"}
 
         try:
-            user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+            send_key(vk, KEYEVENTF_KEYUP)
             time.sleep(self.config.pause_between_actions)
             return {"status": "success", "action": "key_up", "key": k}
         except Exception as exc:
@@ -231,9 +232,9 @@ class KeyboardController:
 
         try:
             for _ in range(presses):
-                user32.keybd_event(vk, 0, 0, 0)
+                send_key(vk)
                 time.sleep(0.05)
-                user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+                send_key(vk, KEYEVENTF_KEYUP)
                 if presses > 1:
                     time.sleep(interval)
 
@@ -244,9 +245,22 @@ class KeyboardController:
             return {"status": "error", "message": str(exc)}
 
     def type_text(self, text: str, interval: float | None = None) -> dict[str, Any]:
-        """Type ASCII text character by character with configurable interval."""
+        """Type ASCII text character by character with configurable interval.
+
+        When the text contains characters without a virtual-key mapping (Unicode,
+        Vietnamese accents, unmapped punctuation), fall back to a single safe
+        clipboard paste of the whole string to avoid per-character clipboard churn
+        (Runtime Policy: TYPE_TEXT_FALLBACK_PASTE).
+        """
         if interval is None:
             interval = self.config.default_typing_interval
+
+        if self.config.type_text_fallback_paste and any(
+            VK_CODES.get(ch.lower()) is None for ch in text
+        ):
+            paste_result = self.paste_text(text)
+            paste_result["action"] = "type_text_paste_fallback"
+            return paste_result
 
         try:
             for char in text:
@@ -255,14 +269,14 @@ class KeyboardController:
                 if vk is not None:
                     is_upper = char.isupper()
                     if is_upper:
-                        user32.keybd_event(VK_CODES["shift"], 0, 0, 0)
+                        send_key(VK_CODES["shift"])
 
-                    user32.keybd_event(vk, 0, 0, 0)
+                    send_key(vk)
                     time.sleep(0.02)
-                    user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+                    send_key(vk, KEYEVENTF_KEYUP)
 
                     if is_upper:
-                        user32.keybd_event(VK_CODES["shift"], 0, KEYEVENTF_KEYUP, 0)
+                        send_key(VK_CODES["shift"], KEYEVENTF_KEYUP)
                 else:
                     # Fallback for characters not directly mapped in ASCII table
                     self.paste_text(char)
@@ -297,14 +311,14 @@ class KeyboardController:
         try:
             # Press down sequence
             for vk in vk_sequence:
-                user32.keybd_event(vk, 0, 0, 0)
+                send_key(vk)
                 time.sleep(0.02)
 
             time.sleep(0.05)
 
             # Release up sequence in reverse order
             for vk in reversed(vk_sequence):
-                user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+                send_key(vk, KEYEVENTF_KEYUP)
                 time.sleep(0.02)
 
             time.sleep(self.config.pause_between_actions)
@@ -314,7 +328,7 @@ class KeyboardController:
             # Attempt to release pressed keys on failure
             for vk in vk_sequence:
                 try:
-                    user32.keybd_event(vk, 0, KEYEVENTF_KEYUP, 0)
+                    send_key(vk, KEYEVENTF_KEYUP)
                 except Exception:
                     pass
             return {"status": "error", "message": str(exc)}

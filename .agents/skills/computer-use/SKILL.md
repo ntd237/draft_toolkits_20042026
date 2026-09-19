@@ -9,6 +9,9 @@ Automates desktop computer control through an observation-action-verification lo
 
 All system parameters, directory paths, safety policies, and validation rules strictly follow [config.md](config.md).
 
+## Execution Environment Boundary
+This skill drives the desktop exclusively through **Bash + Python CLI** (`scripts/controller.py`) on **Windows** (pure Win32 ctypes, zero external dependencies). It is an independent dispatch path: do not mix it with any host-side computer-use tooling (e.g., a Node REPL computer-use SDK) inside the same workflow.
+
 ## Trigger
 Activates when the user requests GUI desktop interaction, clicking specific buttons or UI controls, typing text into desktop software, capturing screenshots for interaction, or whenever the following keywords appear: `computer-use`, `desktop-automation`, `gui-control`, `mouse-click`, `screen-capture`, `os-automation`.
 
@@ -41,7 +44,7 @@ Activates when the user requests GUI desktop interaction, clicking specific butt
 2. Extract element bounding box center or normalized coordinates `[norm_x, norm_y]` on a 1000-point scale.
 3. Automatically map normalized coordinates to physical desktop pixel coordinates:
    `python scripts/controller.py map --norm-x <x> --norm-y <y> --width <orig_w> --height <orig_h> --scale-factor <scale_factor> --monitor-left <left> --monitor-top <top>`
-4. Validate that output coordinates reside within valid target monitor boundaries before dispatch.
+4. Coordinate boundary validation (Validation Policy 4.1) is enforced automatically before dispatch: coordinates outside every physical monitor boundary are rejected with an error.
 
 ### Phase 3: Action Execution with Safety Guardrails
 **Objective**: Dispatch mouse or keyboard events guarded by Multi-Monitor Failsafe, Focus Guard, and Human Confirmation gates.
@@ -64,6 +67,11 @@ Activates when the user requests GUI desktop interaction, clicking specific butt
      `python scripts/controller.py paste --text "<unicode_content>"`
    - Use keyboard shortcuts:
      `python scripts/controller.py hotkey --keys "ctrl,s"`
+   - Press a single key (e.g. for keyboard-based activation retries):
+     `python scripts/controller.py key --name enter`
+   - Double-click:
+     `python scripts/controller.py click --x <x> --y <y> --clicks 2`
+   - Note: `type` automatically falls back to one safe clipboard paste when the text contains characters without virtual-key mapping (Unicode, Vietnamese, unmapped punctuation).
 5. Emergency Multi-Monitor Failsafe: Moving the cursor to any corner of ANY connected monitor immediately triggers `FailSafeTriggered` and releases all pressed inputs.
 
 ### Phase 4: Feedback Verification & Error Recovery
@@ -77,6 +85,11 @@ Activates when the user requests GUI desktop interaction, clicking specific butt
    - If `has_changed` is `True` and expected dialog/element appeared: proceed to next step.
    - If `has_changed` is `False` (UI did not transition): retry up to 3 times with exponential backoff `[1.0s, 2.0s, 3.0s]`.
 5. If state remains unchanged after 3 attempts, halt execution and report diagnostic details with visual diff artifacts for user intervention.
+
+### Batch Execution (Delay Optimization)
+To minimize per-invocation Python startup overhead and avoid micro-turns, batch consecutive actions in a single CLI call:
+`python scripts/controller.py sequence --steps '[{"action": "click", "x": 100, "y": 200}, {"action": "wait", "seconds": 0.5}, {"action": "key", "name": "enter"}]'`
+Supported actions: `click`, `move`, `drag`, `type`, `paste`, `hotkey`, `scroll`, `key`, `wait`, `screen`. Execution stops at the first `error` / `failsafe_aborted` / `blocked_by_safety_policy` step.
 
 ## Output Format
 
@@ -92,7 +105,7 @@ For every execution cycle, output a structured summary:
 ### 2. File Artifacts
 - Screenshots stored under `docs/computer_use/screenshots/`.
 - Visual diffs stored under `docs/computer_use/screenshots/diff_*.png`.
-- Session execution logs stored under `docs/computer_use/logs/session_<timestamp>.jsonl`.
+- Session execution logs stored under `docs/computer_use/logs/session_<yyyymmdd>_<session_slug>.jsonl` (one JSONL audit line per CLI invocation; slug selected by the `COMPUTER_USE_SESSION_SLUG` environment variable, default `default`).
 
 ## Don'ts
 - Do not perform blind clicking without analyzing a freshly captured screenshot.
@@ -106,8 +119,8 @@ For every execution cycle, output a structured summary:
 - [ ] `config.md` exists and defines all 5 policies (File System, Naming, Runtime, Validation, Workflow) using relative paths.
 - [ ] `references/coordinates-and-display.md` documents absolute/normalized coordinates, DPI scaling, and multi-monitor offsets.
 - [ ] `references/safety-and-failsafe.md` documents multi-monitor failsafe triggers, human-in-the-loop gates, and natural pacing.
-- [ ] `scripts/` contains complete modular zero-dependency scripts (`config_loader.py`, `screen.py`, `mouse.py`, `keyboard.py`, `grounding_helper.py`, `visual_diff.py`, `window_manager.py`, `controller.py`).
-- [ ] `tests/` contains automated unit tests covering all modules with 100% pass rate.
+- [ ] `scripts/` contains complete modular zero-dependency scripts (`config_loader.py`, `sendinput.py`, `screen.py`, `mouse.py`, `keyboard.py`, `grounding_helper.py`, `visual_diff.py`, `window_manager.py`, `controller.py`).
+- [ ] All `scripts/` modules compile cleanly (`python -m py_compile`) and the CLI smoke path (`controller.py info`) runs without error.
 - [ ] Multi-Monitor Failsafe checks 4 corners across all connected displays in Virtual Desktop.
 - [ ] Unicode text entry uses safe clipboard paste with pre-existing clipboard backup and restore.
 - [ ] Visual Diff verifies UI state transition before completing an action step.
