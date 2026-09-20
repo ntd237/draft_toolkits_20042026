@@ -41,6 +41,15 @@ PNG_CLSID = CLSID(
     (wintypes.BYTE * 8)(0x9A, 0x73, 0x00, 0x00, 0xF8, 0x1E, 0xF3, 0x2E),
 )
 
+# window_manager.py reconfigures the shared user32.GetWindowRect argtypes with its
+# own RECT class at import time; this independent prototype avoids the ctypes
+# pointer-type conflict when capture uses wintypes.RECT with byref().
+_GetWindowRect = ctypes.WINFUNCTYPE(
+    wintypes.BOOL,
+    wintypes.HWND,
+    ctypes.POINTER(wintypes.RECT),
+)(("GetWindowRect", user32))
+
 
 class ScreenCapture:
     """Acquires screen captures and extracts display metadata using native Win32 APIs."""
@@ -137,7 +146,7 @@ class ScreenCapture:
 
         if window_hwnd is not None and window_hwnd > 0:
             rect = wintypes.RECT()
-            if user32.GetWindowRect(window_hwnd, ctypes.byref(rect)):
+            if _GetWindowRect(window_hwnd, ctypes.byref(rect)):
                 src_x = rect.left
                 src_y = rect.top
                 src_w = max(1, rect.right - rect.left)
