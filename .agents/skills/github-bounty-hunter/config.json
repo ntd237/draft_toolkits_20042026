@@ -1,0 +1,33 @@
+{
+  "runtime_policy": {
+    "default_workspace_dir": "scratch/bounties",
+    "max_concurrent_tasks": 1,
+    "human_in_the_loop_required": true,
+    "require_confirmation_before_comment": true,
+    "require_confirmation_before_pr": true,
+    "zero_spam_enforcement": true
+  },
+  "search_policy": {
+    "default_labels": ["bounty", "algora", "polar", "help wanted"],
+    "supported_languages": ["TypeScript", "JavaScript", "Python", "Go", "Rust"],
+    "max_issue_age_days": 14,
+    "max_unresolved_comments": 20,
+    "exclude_assigned": true,
+    "github_api_base_url": "https://api.github.com",
+    "algora_bounties_api_url": "https://api.algora.io/api/bounties",
+    "polar_bounties_api_url": "https://api.polar.sh/api/v1/issues"
+  },
+  "git_policy": {
+    "branch_prefix": "fix/bounty-issue-",
+    "commit_message_prefix": "fix: ",
+    "mandatory_issue_closing_keyword": "Fixes #",
+    "enforce_clean_working_tree": true
+  },
+  "verification_policy": {
+    "baseline_test_timeout_seconds": 300,
+    "require_reproduction_script": true,
+    "require_regression_test": true,
+    "require_ci_check_green": true,
+    "max_ci_wait_timeout_minutes": 20
+  }
+}

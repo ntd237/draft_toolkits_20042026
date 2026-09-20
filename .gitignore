@@ -8,7 +8,6 @@ workflow-toolkit-lite.md
 *.png
 *.mp4
 *.jpeg
-*.json
 icu-medical-record-generator/
 __pycache__/
 tests/
