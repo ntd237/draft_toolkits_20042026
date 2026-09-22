@@ -13,7 +13,7 @@ Invoked by `00-orchestrator` after a clear root cause is established — from `0
 ### Phase 1: Verify Root Cause Before Fixing
 **Objective**: Confirm sufficient root cause specificity before modifying code, preventing misdirected fixes on symptoms.
 
-1. Inspect received inputs: verify whether a specific root cause exists (exact file/line/query/config location) or merely a symptom description.
+1. Inspect received inputs and structured YAML handoff block: verify whether a specific root cause exists (exact file/line/query/config location, `cleanup_verified: true`) or merely a symptom description.
 2. If only symptoms are provided without sufficient specificity to locate the fix → report back that returning to `04-bugfinder` is required; do not guess.
 
 ### Phase 2: Green — Fix to Pass

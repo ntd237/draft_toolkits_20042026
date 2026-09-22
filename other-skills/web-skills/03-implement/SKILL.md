@@ -13,7 +13,7 @@ Invoked by `00-orchestrator` in implementation scenarios, typically right after 
 ### Phase 1: Green — Minimal Implementation
 **Objective**: Write strictly the minimal code needed to transition targeted tests from Red to Green.
 
-1. Thoroughly inspect the handed-off Red tests (if available): assertions, expected inputs/outputs, covered edge cases.
+1. Thoroughly inspect the handed-off Red tests and structured YAML handoff block (target files, failing test file/name, run command, expected behavior).
 2. Implement only enough to pass those tests — do not add extra features, endpoints, fields, or optimizations outside the targeted test scope.
 3. If missing tests for a critical behavior are discovered during coding, do not silently expand scope — report back so `06-test` can add tests first.
 4. Re-run the entire related test suite and verify Green.

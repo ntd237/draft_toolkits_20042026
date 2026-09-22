@@ -70,6 +70,48 @@ Assess complexity/risk based on: number of layers touched (single layer vs multi
 ## Output Format
 Before routing, output a brief summary block: Domain check (pass/reject + reason) → Classification (implementation/known bug/unknown bug) → Complexity assessment (simple/ambiguous/complex) → Selected scenario (# in table) → Skill sequence to invoke. Then proceed to invoke the first skill in the sequence. If handling a re-route after review-fail, additionally state: failed original scenario → newly selected bug-fix branch (4a/4b/5/6) → rationale (root cause from review report, simple or complex).
 
+## Handoff Contract Schemas
+To eliminate ambiguity during transitions between child skills, skills must structure transition data using standard YAML handoff blocks:
+
+### 1. TDD Red Handoff (`06-test` → `03-implement` or `05-fix`)
+```yaml
+handoff:
+  from_skill: "06-test"
+  to_skill: "03-implement" # or "05-fix"
+  target_files: ["src/services/auth.ts"]
+  failing_test_file: "tests/services/auth.test.ts"
+  failing_test_name: "should return 401 when token expired"
+  run_command: "npm test -- tests/services/auth.test.ts"
+  observed_failure: "Expected 401, received 500"
+  next_behavior: "Return 401 Unauthorized instead of throwing unhandled exception"
+```
+
+### 2. Defect Diagnosis Handoff (`04-bugfinder` → `06-test` or `02-plan`)
+```yaml
+handoff:
+  from_skill: "04-bugfinder"
+  to_skill: "06-test" # or "02-plan"
+  offending_layer: "backend" # frontend | backend | database | multi-tier
+  exact_location: "src/db/queries/order.ts:42"
+  root_cause: "N+1 query loop when fetching order items without JOIN"
+  blast_radius: "simple" # simple | complex
+  recommended_fix: "Use INNER JOIN with items table and eager load"
+  cleanup_verified: true # confirms all temporary debug instrumentation was removed
+```
+
+### 3. Review Defect Handoff (`07-review` FAIL → `00-orchestrator`)
+```yaml
+handoff:
+  from_skill: "07-review"
+  verdict: "FAIL"
+  blocking_issues:
+    - severity: "BLOCKING"
+      layer: "backend"
+      location: "src/api/payment.ts:115"
+      root_cause: "Missing authorization check on refund endpoint"
+      evidence: "Unauthenticated POST request returns 200 OK"
+```
+
 ## Don'ts
 - Do not arbitrarily bypass `04-bugfinder` when the bug's cause is unclear, even if the user seems in a rush.
 - Do not arbitrarily bypass `02-plan` when the request touches ≥2 layers or changes DB schema / API contracts, even if individual parts appear simple.
@@ -79,6 +121,7 @@ Before routing, output a brief summary block: Domain check (pass/reject + reason
 - Do not guess the scenario when input signals are insufficient for classification (e.g., unclear whether it is a bug or new feature) — ask a brief clarifying question instead of guessing.
 - Do not treat an `07-review` failure as pipeline completion or arbitrarily jump back to `03-implement`/`05-fix` outside the standard pipeline — must go through Phase 5 to select the appropriate 4a/4b/5/6 branch.
 - Do not auto-loop Phase 5 indefinitely when the same issue fails repeatedly — stop on the 3rd recurrence and report to the user.
+- Do not transition between critical skill boundaries without providing the structured YAML handoff block.
 
 ## Quality Checklist
 - [ ] Has the domain gate run with a clear pass/reject conclusion before routing?
@@ -86,5 +129,6 @@ Before routing, output a brief summary block: Domain check (pass/reject + reason
 - [ ] Does the selected scenario match the 6-scenario table without arbitrary improvisation?
 - [ ] Are the mandatory approval checkpoints respected (brainstorm summary approved + spec created; plan approved) before advancing?
 - [ ] Are child skills invoked in the correct order, passing involved layers and necessary context?
+- [ ] Are structured YAML handoff blocks populated when passing tasks between critical skill boundaries?
 - [ ] If `07-review` fails, is re-routing to the proper 4a/4b/5/6 branch enforced (for all original scenarios, including 4/5/6) without skipping Phase 5?
 - [ ] Is the new bug-fix branch chosen based on root cause/complexity from the `07-review` report itself, freshly re-evaluated rather than copying previous complexity?

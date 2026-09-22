@@ -31,7 +31,19 @@ Invoked by `00-orchestrator` at the start of each TDD cycle (default: authoring 
 2. Report unexpected failures in pre-existing tests — these may indicate regressions requiring `04-bugfinder`/`05-fix`, rather than faults in new tests.
 
 ## Output Format
-For Red: test cases + execution output (failing, with failure reasons) + corresponding acceptance criteria / root cause. For Verify: test cases + execution output (passing) + behavior coverage notes. Always include full suite verification results.
+For Red: test cases + execution output (failing, with failure reasons) + corresponding acceptance criteria / root cause. Output the structured YAML handoff block for `03-implement` or `05-fix`:
+```yaml
+handoff:
+  from_skill: "06-test"
+  to_skill: "03-implement" # or "05-fix"
+  target_files: ["src/services/auth.ts"]
+  failing_test_file: "tests/services/auth.test.ts"
+  failing_test_name: "should return 401 when token expired"
+  run_command: "npm test -- tests/services/auth.test.ts"
+  observed_failure: "Expected 401, received 500"
+  next_behavior: "Return 401 Unauthorized instead of throwing unhandled exception"
+```
+For Verify: test cases + execution output (passing) + behavior coverage notes. Always include full suite verification results.
 
 ## Don'ts
 - Do not write tests that pass immediately from the outset in Phase 1 (Red) — if a test passes before implementation exists, it fails to specify the target behavior properly.
@@ -42,5 +54,6 @@ For Red: test cases + execution output (failing, with failure reasons) + corresp
 ## Quality Checklist
 - [ ] In Phase 1, was the test confirmed Red for the correct reason (missing implementation / existing bug) rather than setup faults?
 - [ ] Do test cases faithfully reflect acceptance criteria or root causes without superficial, tautological assertions?
+- [ ] Is the structured YAML handoff block populated with failing test paths and exact run command?
 - [ ] Was full suite verification executed and were all discovered regressions reported?
 - [ ] Were zero implementation code files modified within the scope of this skill?
