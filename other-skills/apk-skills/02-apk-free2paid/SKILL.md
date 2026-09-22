@@ -44,6 +44,7 @@ User asks to convert a free APK to paid edition, remove ads and unlock premium f
   - Match methods by string constants and descriptor signatures rather than class names when obfuscated.
   - Stub `loadAd` and `show` methods to `return-void` (or return matching register type).
   - Force `isLoaded` and `isAdLoaded` methods to return boolean `false` (`const/4 v0, 0x0; return v0`). Never return `true` as it triggers `show()` crashes on uninitialized ad instances.
+  - If ads mediation callbacks exist (`analysis.json.mediationSdks`), ensure listeners (`onAdLoaded`, `onAdDisplayed`) trigger or loading guards bypass waiting to prevent app startup deadlock.
   - Wrap SDK `initialize` calls in try/catch blocks to protect environments lacking Google Play Services.
   - Tag every edit with `// PATCH free2paid: <reason>`. Keep all ad drawables and string resources to prevent `Resources$NotFoundException`.
 
@@ -72,12 +73,15 @@ User asks to convert a free APK to paid edition, remove ads and unlock premium f
 ### Phase 5: Rebuild, Align, Sign & Report
 **Objective**: Compile smali back to APK, align uncompressed data, sign with the new keystore, and generate the patch audit report.
 
-- Rebuild package: `java -jar apktool.jar b work/convert-free2paid/decompiled -o work/convert-free2paid/unsigned.apk`.
+- Rebuild package: `java -jar apktool.jar b work/convert-free2paid/decompiled -o work/convert-free2paid/unsigned.apk` (if resource ID shifting occurs on obfuscated builds, append `--keep-broken-res`).
 - Align archive: `zipalign -p -f 4 work/convert-free2paid/unsigned.apk work/convert-free2paid/aligned.apk`.
-- Sign with the new keystore:
+- Sign with the new keystore enabling both v1 and v2 schemes:
   - Copy unsigned artifact to `dist/app-paid-debug-unsigned.apk`.
-  - Sign aligned artifact to `dist/app-paid-release-signed.apk` using `apksigner` or `uber-apk-signer.jar`.
-  - For XAPK: rebuild each split, package with original `manifest.json`, and emit both unsigned and signed `.xapk`.
+  - Sign aligned artifact to `dist/app-paid-release-signed.apk`:
+    ```bash
+    apksigner sign --ks work/convert-free2paid/release.keystore --ks-key-alias <alias> --ks-pass pass:<pass> --key-pass pass:<pass> --v1-signing-enabled true --v2-signing-enabled true dist/app-paid-release-signed.apk
+    ```
+  - For XAPK: rebuild each split, sign each aligned split, package with original `manifest.json`, and emit both unsigned and signed `.xapk`.
 - Verify signature: `apksigner verify --verbose dist/app-paid-release-signed.apk`.
 - Generate `work/convert-free2paid/PATCH_REPORT.md` detailing every patched file, line, reason, keystore fingerprint, and limitations.
 
@@ -96,10 +100,12 @@ User asks to convert a free APK to paid edition, remove ads and unlock premium f
 - Do not produce only a single artifact; always emit both debug-unsigned and release-signed builds.
 
 ## Quality Checklist
-- [ ] `analysis.json` loaded and all detected ads SDKs and premium gates addressed?
+- [ ] `analysis.json` loaded and all detected ads SDKs, mediation listeners, and premium gates addressed?
 - [ ] Ad views in layout replaced with same-ID View placeholders without deleting view IDs?
 - [ ] `isLoaded` methods stubbed to return `false` with exact smali register types?
+- [ ] Mediation listeners/loading guards neutralized to prevent startup deadlocks?
 - [ ] Self-signature validation methods patched to return pass?
 - [ ] Premium flags set to true and gate branches bypassed?
-- [ ] APK rebuilt, zipaligned, and verified with `apksigner verify --verbose`?
+- [ ] APK rebuilt, zipaligned, and signed with v1 and v2 schemes enabled (`apksigner verify --verbose` passed)?
 - [ ] Fresh keystore used and SHA-256 fingerprint recorded in `PATCH_REPORT.md`?
+

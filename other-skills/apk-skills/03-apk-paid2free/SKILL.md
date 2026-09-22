@@ -75,12 +75,15 @@ User asks to convert a paid APK to free edition, inject ads, re-gate premium fea
 ### Phase 5: Rebuild, Align, Sign & Report
 **Objective**: Assemble modified sources, align binary data, sign with the new keystore, and generate audit report.
 
-- Rebuild package: `java -jar apktool.jar b work/convert-paid2free/decompiled -o work/convert-paid2free/unsigned.apk`.
+- Rebuild package: `java -jar apktool.jar b work/convert-paid2free/decompiled -o work/convert-paid2free/unsigned.apk` (if resource ID shifting occurs on obfuscated builds, append `--keep-broken-res`).
 - Align archive: `zipalign -p -f 4 work/convert-paid2free/unsigned.apk work/convert-paid2free/aligned.apk`.
-- Sign with the new keystore:
+- Sign with the new keystore enabling both v1 and v2 schemes:
   - Copy unsigned artifact to `dist/app-free-debug-unsigned.apk`.
-  - Sign aligned artifact to `dist/app-free-release-signed.apk` using `apksigner` or `uber-apk-signer.jar`.
-  - For XAPK: rebuild each split, package with original `manifest.json`, and emit both unsigned and signed `.xapk`.
+  - Sign aligned artifact to `dist/app-free-release-signed.apk`:
+    ```bash
+    apksigner sign --ks work/convert-paid2free/release.keystore --ks-key-alias <alias> --ks-pass pass:<pass> --key-pass pass:<pass> --v1-signing-enabled true --v2-signing-enabled true dist/app-free-release-signed.apk
+    ```
+  - For XAPK: rebuild each split, sign each aligned split, package with original `manifest.json`, and emit both unsigned and signed `.xapk`.
 - Verify signature: `apksigner verify --verbose dist/app-free-release-signed.apk`.
 - Generate `work/convert-paid2free/PATCH_REPORT.md` documenting injection points, mode, test IDs, and certificate fingerprints.
 
@@ -103,5 +106,6 @@ User asks to convert a paid APK to free edition, inject ads, re-gate premium fea
 - [ ] Test ad IDs used and replacement notice included in report?
 - [ ] Premium features re-gated with conditional branch guards or paywall triggers?
 - [ ] Self-signature validation methods patched to return pass?
-- [ ] APK rebuilt, zipaligned, and verified with `apksigner verify --verbose`?
+- [ ] APK rebuilt, zipaligned, and signed with v1 and v2 schemes enabled (`apksigner verify --verbose` passed)?
 - [ ] Fresh keystore used and SHA-256 fingerprint recorded in `PATCH_REPORT.md`?
+

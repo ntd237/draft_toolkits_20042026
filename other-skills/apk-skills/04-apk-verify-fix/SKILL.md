@@ -29,7 +29,10 @@ User asks to test, verify, or auto-fix a converted APK/XAPK on device/emulator, 
 **Objective**: Install package, launch main activity, and execute comprehensive S1-S4 smoke test suite.
 
 - Install package:
-  - Run `adb install -r -d <apk>`. If installation fails with `INSTALL_FAILED_DEPRECATED_SDK_VERSION`, retry with `--bypass-low-target-sdk-block`.
+  - If single APK: run `adb install -r -d <apk>`.
+  - If split bundle / XAPK splits: run `adb install-multiple -r -d <base.apk> <config.split1.apk> ...`.
+  - If installation fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`: run `adb uninstall --user 0 <package>` or `adb uninstall <package>` to purge conflicting previous certificates, then retry installation.
+  - If installation fails with `INSTALL_FAILED_DEPRECATED_SDK_VERSION`: retry with `--bypass-low-target-sdk-block`.
 - Launch main activity:
   - Run `adb shell am start -n <package>/<launcherActivity>`. Verify process existence with `adb shell pidof <package>`.
 - Execute Smoke Suites:
@@ -45,15 +48,18 @@ User asks to test, verify, or auto-fix a converted APK/XAPK on device/emulator, 
     - Paid edition: UI dump must NOT contain ad views; premium features and menus must be accessible.
     - Free edition: UI dump must display ad containers; premium buttons must trigger paywall/purchase flow.
   - **S4 — Auth & Integrity Smoke Test**:
+    - Clean stale sandbox state before auth tests with `adb shell pm clear <package>` to prevent `AEADBadTagException` / `KeyStoreException` from AndroidKeyStore master key invalidation after re-signing.
     - Verify auth/login screens render with accessible input fields.
     - If test account credentials are provided, attempt login.
     - Grep logcat for auth failure signals: `ApiException`, `DEVELOPER_ERROR` (new keystore SHA-1 missing in Firebase Console), `401`, `403`, `Play Integrity`, `AppCheck`, `CertificateException`.
-- Export filtered logcat to `work/verify/logcat.txt`.
+- Export PID-isolated logcat via `adb logcat --pid=$(adb shell pidof -s <package>) -d` to `work/verify/logcat.txt` (falling back to package grep if PID filter unsupported).
 
 ### Phase 3: Diagnostic Classification & Failure Triage
 **Objective**: Map logcat crash dumps and test failures into actionable diagnostic buckets.
 
 - Classify failure signals:
+  - `INSTALL_FAILED_UPDATE_INCOMPATIBLE`: Signature mismatch with previous install; resolve by full `adb uninstall <package>`.
+  - `INSTALL_FAILED_MISSING_SPLIT`: Split APK installed as standalone; resolve by switching to `adb install-multiple`.
   - `INSTALL_FAILED_*`: Signing failure, `versionCode` downgrade, or deprecated SDK level.
   - `Resources$NotFoundException`: Missing resource, drawable, or invalid ID reference.
   - `ClassNotFoundException` / `NoClassDefFoundError`: Deleted class or invalid manifest component.
@@ -62,12 +68,15 @@ User asks to test, verify, or auto-fix a converted APK/XAPK on device/emulator, 
   - `InflateException` (AdView): Ad layout XML injected without SDK classes present in dex.
   - Process alive with black screen: Engine error, missing ABI `.so`, or init deadlock.
   - Native crash (`A/libc`, `SIGSEGV`): Missing native library or corrupted JNI bridge.
+  - `AEADBadTagException` / `KeyStoreException`: AndroidKeyStore master key invalidation after re-signing; resolve by `adb shell pm clear <package>`.
   - `ApiException` / `DEVELOPER_ERROR` / server `401`/`403`: Firebase SHA-1 mismatch or server attestation rejection (classify as `manual` bucket; do not burn auto-fix cycles).
 - Record findings into `work/verify/fix-history.md`.
 
 ### Phase 4: Targeted Auto-Fix Iteration Loop
-**Objective**: Apply surgical patches, bump versionCode, re-sign, and reinstall until tests pass or iteration limit is reached.
+**Objective**: Apply surgical patches with snapshot rollback safety, bump versionCode, re-sign, and reinstall until tests pass or iteration limit is reached.
 
+- Snapshot Isolation:
+  - Before applying any fix at iteration N, save a snapshot of decompiled sources (`work/verify/snapshot-iter-<N>/`). If iteration N fails to assemble or introduces syntax regressions, roll back to the snapshot before testing another fix strategy.
 - Apply targeted patch in decompiled workspace:
   - Missing resource/class/`.so`: restore from `work/convert-<direction>/original.apk`.
   - Missing permission: restore permission tag in `AndroidManifest.xml`.
@@ -78,8 +87,8 @@ User asks to test, verify, or auto-fix a converted APK/XAPK on device/emulator, 
   - Re-run `01-apk-edition-analyzer` with an expanded scan to uncover hidden signature checks or lifecycle hooks. A 3rd consecutive attempt without new diagnosis is prohibited.
 - Rebuild, Sign & Retest:
   - Bump `versionCode` by 1 in `apktool.yml` / `AndroidManifest.xml`.
-  - Rebuild via `apktool b`, align with `zipalign`, and re-sign with the SAME fresh keystore.
-  - Reinstall with `adb install -r -d` and re-execute Phase 2 smoke tests.
+  - Rebuild via `apktool b` (with `--keep-broken-res` if resource ID shifts occur), align with `zipalign`, and re-sign with the SAME fresh keystore using both v1 and v2 schemes.
+  - Reinstall with `adb install -r -d` (or `adb install-multiple`) and re-execute Phase 2 smoke tests.
   - Terminate loop when all suites pass (`PASSED`) or upon reaching 5 iterations (`FAILED`).
 
 ### Phase 5: Verification Reporting & Artifact Handoff
@@ -98,15 +107,18 @@ User asks to test, verify, or auto-fix a converted APK/XAPK on device/emulator, 
 - Do not loop auto-fixing beyond 5 iterations; escalate with detailed logcat diagnostics.
 - Do not waste fix iterations on backend attestation or Firebase SHA-1 failures (`DEVELOPER_ERROR`, `401/403`, Play Integrity); classify as `manual` immediately.
 - Do not consider an app verified based solely on process existence (`pidof`); UI rendering and absence of engine errors are mandatory.
+- Do not apply patches without taking a workspace snapshot to allow clean rollbacks.
 - Do not log or print keystore passwords or private keys.
 - Do not claim `PASSED` status without concrete evidence from S1-S4 checks.
 - Do not delete user data beyond `adb uninstall` of the specific target package.
 
 ## Quality Checklist
-- [ ] Target package installed and PID confirmed alive after 5 seconds?
+- [ ] Target package installed (using `adb install-multiple` if split bundle) and PID confirmed alive after 5 seconds?
 - [ ] UI verified as rendered via non-empty `uiautomator` dump and non-black screen?
 - [ ] Logcat verified free of `FATAL`, native crashes (`A/libc`, `SIGSEGV`), ANR, and stack engine errors?
 - [ ] Edition-specific assertions (ads visibility, premium gating) validated?
-- [ ] S4 auth test executed and Firebase/integrity logcat signals evaluated?
+- [ ] S4 auth test executed with clean sandbox state (`pm clear`) and Firebase/integrity logcat signals evaluated?
+- [ ] Pre-patch workspace snapshot created before each auto-fix iteration?
 - [ ] Consecutive failures in the same diagnostic bucket capped at 2 before re-analysis?
 - [ ] Every fix attempt logged with failure cause, applied patch, and rebuild outcome?
+

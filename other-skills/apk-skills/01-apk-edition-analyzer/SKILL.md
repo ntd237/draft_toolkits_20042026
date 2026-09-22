@@ -47,13 +47,15 @@ User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gate
 ### Phase 4: Scan Ads, Flags, Integrity & Auth Dependencies
 **Objective**: Map monetization components, premium branch logic, integrity validation, and auth dependencies.
 
-- Scan Ads SDKs: grep `AndroidManifest.xml`, `smali/**/*.smali`, and `resources.arsc` for known ad networks:
+- Scan Ads & Mediation SDKs: grep `AndroidManifest.xml`, `smali/**/*.smali`, and `resources.arsc` for known ad and mediation networks:
   - AdMob (`com.google.android.gms.ads`), Facebook (`com.facebook.ads`), AppLovin (`com.applovin`), Unity Ads (`com.unity3d.ads`), IronSource (`com.ironsource`), Pangle (`com.bytedance.sdk.openadsdk`).
-  - Record each SDK with file path, matched pattern, and caller method (`loadAd`, `show`, `initialize`).
+  - Mediation adapters & listeners: AppLovin MAX (`com.applovin.mediation`), IronSource Mediation (`com.ironsource.mediationsdk`), Unity Services (`com.unity3d.services.ads`).
+  - Record each SDK with file path, matched pattern, caller method (`loadAd`, `show`, `initialize`), and registered ad listener callbacks.
 - Scan Feature Flags & Premium Gates: grep for `BuildConfig`, `FLAVOR`, `IS_PREMIUM`, `isPremium`, `isPro`, `billing`, `BillingClient`, `purchases`.
   - Record target file, field name, default value, and the gating branch opcodes (`if-eqz` / `if-nez`).
-- Scan Self-Signature Checks:
-  - Grep for `PackageManager.GET_SIGNATURES`, `getSigningCertificateHistory`, `signingInfo`, `hasSigningCertificate`, and custom comparisons on `signatures[0].toByteArray()`.
+- Scan Self-Signature & Tamper Checks:
+  - Java/Smali: grep for `PackageManager.GET_SIGNATURES`, `getSigningCertificateHistory`, `signingInfo`, `hasSigningCertificate`, and custom comparisons on `signatures[0].toByteArray()`.
+  - Checksum/Tamper: grep for `classes.dex` CRC32/SHA checks, `META-INF` integrity verification, and debuggable detection (`ApplicationInfo.FLAG_DEBUGGABLE`).
   - Pinpoint the exact method returning the validation boolean (target method for converter patching).
 - Scan Platform Attestation & Cert Pinning:
   - Grep for `play.core.integrity`, `safetynet`, `firebase.appcheck` (flag `bypassable: false`).
@@ -65,7 +67,9 @@ User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gate
 ### Phase 5: Native Library Mapping & Artifact Synthesis
 **Objective**: Catalog compiled native binaries and compile structured analysis outputs.
 
-- Scan `lib/<abi>/*.so`, checking binary architecture, stripped symbol status, and string references to monetization routines.
+- Scan `lib/<abi>/*.so`, checking binary architecture, stripped symbol status, and string references:
+  - Monetization & licensing routines.
+  - Native signature verification: search `.so` binaries for string constants or JNI calls referencing `GET_SIGNATURES`, `signatures`, `classes.dex`, `META-INF/`, or custom OpenSSL/mbedTLS cert pinning.
 - Determine `editionGuess` (`free` vs `paid`) with confidence level (`high`, `medium`, `low`) backed by at least two independent evidence signals.
 - Synthesize `work/analyze/analysis.json` and `work/analyze/REPORT.md`.
 
@@ -95,6 +99,9 @@ User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gate
   "adsSdks": [
     {"sdk": "admob", "evidence": "smali/com/example/AdHelper.smali: loadAd call"}
   ],
+  "mediationSdks": [
+    {"network": "applovin-max", "listener": "MaxAdListener", "evidence": "smali/com/example/MaxHelper.smali"}
+  ],
   "permissions": ["INTERNET", "AD_ID"],
   "featureFlags": [
     {"name": "IS_PREMIUM", "file": "smali/com/example/BuildConfig.smali", "value": "false", "gate": "if-eqz"}
@@ -102,6 +109,9 @@ User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gate
   "integrityChecks": [
     {"type": "self-signature", "file": "smali/com/example/SignCheck.smali", "method": "check()Z", "bypassable": true},
     {"type": "play-integrity", "file": "smali/...", "method": "unknown", "bypassable": false}
+  ],
+  "nativeIntegrityChecks": [
+    {"lib": "libnative.so", "pattern": "GET_SIGNATURES", "bypassable": false}
   ],
   "authDependencies": [
     {"kind": "google-signin", "evidence": "res/values/strings.xml: default_web_client_id"}
@@ -114,7 +124,7 @@ User asks to analyze an APK/XAPK to detect its edition, inspect ads/premium gate
 ```
 
 ### `work/analyze/REPORT.md`
-Markdown document structured with: Summary, Input Metadata, Tech Stack Findings, Ads SDK Inventory, Feature Flag Ledger, Integrity Checks & Re-Signing Risks, Native Libraries, Obfuscation Profile, Suggested Conversion Path.
+Markdown document structured with: Summary, Input Metadata, Tech Stack Findings, Ads & Mediation SDK Inventory, Feature Flag Ledger, Integrity Checks & Re-Signing Risks (Java & Native), Native Libraries, Obfuscation Profile, Suggested Conversion Path.
 
 ## Don'ts
 - Do not modify, patch, rebuild, or re-sign the APK within this skill (read-only enforcement).
@@ -123,9 +133,10 @@ Markdown document structured with: Summary, Input Metadata, Tech Stack Findings,
 - Do not analyze packages without confirming legal ownership.
 
 ## Quality Checklist
-- [ ] `analysis.json` contains all required schema keys and is valid JSON?
-- [ ] Every ad SDK and feature flag lists concrete file and smali evidence?
+- [ ] `analysis.json` contains all required schema keys including mediationSdks and nativeIntegrityChecks?
+- [ ] Every ad SDK, mediation network, and feature flag lists concrete file and smali evidence?
 - [ ] Self-signature checks pinpoint the exact validation method to patch?
-- [ ] Re-signing risks (Google Sign-In SHA-1, Play Integrity, App Check) explicitly flagged?
+- [ ] Re-signing risks (Google Sign-In SHA-1, Play Integrity, App Check, native signature checks) explicitly flagged?
 - [ ] Tech stack and obfuscation levels accurately deduced from binary/smali artifacts?
 - [ ] `editionGuess` justified by at least two independent indicators?
+

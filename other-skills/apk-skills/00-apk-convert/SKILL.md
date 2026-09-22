@@ -38,29 +38,30 @@ User asks to convert an APK or XAPK between free and paid editions, or runs `/00
 
 - Route to `02-apk-free2paid` for free→paid or `03-apk-paid2free` for paid→free, forwarding `analysis.json`, package decision, and signing settings.
 - Ensure the converter creates a pristine backup at `work/convert-<direction>/original.apk`.
-- Apply direction-specific patches, neutralize self-signature checks, bump `versionCode` by 1, rebuild via `apktool`, align with `zipalign`, and sign with the fresh or user-provided keystore.
+- Apply direction-specific patches, neutralize self-signature checks, bump `versionCode` by 1, rebuild via `apktool` (with `--keep-broken-res` if resource ID shifts occur), align with `zipalign`, and sign with the fresh or user-provided keystore enabling both v1 and v2 schemes (`--v1-signing-enabled true --v2-signing-enabled true`).
 - Run `apksigner verify --verbose` on the resulting release build before advancing to verification.
 
 ### Phase 4: Device Verification & Auto-Fix
 **Objective**: Perform installation, multi-signal smoke testing, and iterative auto-fixing on a target device or emulator.
 
 - Invoke `04-apk-verify-fix` on the generated release build (`dist/app-*-release-signed.apk`).
-- Verifier installs app via `adb`, launches main activity, and executes smoke suites:
+- Verifier handles clean environment setup: clears app data (`pm clear`) to prevent `AEADBadTagException` on `EncryptedSharedPreferences`, resolves `INSTALL_FAILED_UPDATE_INCOMPATIBLE` by full uninstall, and installs via `adb install -r -d` (or `adb install-multiple` for split XAPKs).
+- Verifier launches main activity and executes smoke suites:
   - S1: Rendered UI verification, process alive check, zero `FATAL` / ANR / native crash / stack engine error.
   - S2: UI navigation and screen rendering.
   - S3: Edition-specific ad visibility and premium feature state verification.
   - S4: Authentication and login smoke test.
-- If failures occur, verifier enters an auto-fix loop (restoring resources/classes, adjusting layout placeholders, handling missing permissions) up to 5 iterations.
+- If failures occur, verifier enters an auto-fix loop with workspace snapshot/rollback (restoring resources/classes, adjusting layout placeholders, handling missing permissions) up to 5 iterations.
 
 ### Phase 5: Summarize & Deliver
 **Objective**: Produce an execution summary, catalog all generated artifacts, and surface manual operational requirements.
 
-- Format delivery summary table: input package, detected edition, chosen direction, package decision, new keystore SHA-256 fingerprint, and verify status (`PASSED` or `FAILED`).
+- Format delivery summary table: input package, detected edition, chosen direction, package decision, new keystore SHA-256 fingerprint, signing schemes enabled (v1+v2), and verify status (`PASSED` or `FAILED`).
 - Document Known Limitations:
   - Server-side entitlement checks cannot be bypassed locally.
   - Google Sign-In / Firebase Auth requires registering the new keystore SHA-1 in Firebase Console (`ApiException 10`).
   - SafetyNet / Play Integrity server enforcement cannot be bypassed locally.
-- Print absolute paths to all deliverables and provide the direct install command (`adb install -r dist/app-*-release-signed.apk`).
+- Print absolute paths to all deliverables and provide the direct install command (`adb install -r dist/app-*-release-signed.apk` or `adb install-multiple` for split bundles).
 
 ## Output Format
 Project-relative file layout and delivery summary structure:
@@ -90,6 +91,8 @@ work/verify/fix-history.md
 - [ ] `analysis.json` generated and `editionGuess` verified with supporting evidence?
 - [ ] Correct converter dispatched and both debug-unsigned and release-signed builds generated?
 - [ ] Fresh keystore generated/applied and its SHA-256 fingerprint documented in `PATCH_REPORT.md`?
-- [ ] `apksigner verify --verbose` passed on release artifact?
-- [ ] `VERIFY_REPORT.md` shows `PASSED` with proof of rendered UI, zero FATAL/ANR, and S1-S4 checks passed?
+- [ ] Signing performed with both v1 and v2 schemes enabled, and `apksigner verify --verbose` passed on release artifact?
+- [ ] `VERIFY_REPORT.md` shows `PASSED` with proof of rendered UI, zero FATAL/ANR, clean data isolation, and S1-S4 checks passed?
+- [ ] Split bundles installed via `adb install-multiple` or merged cleanly without resource ID collisions?
 - [ ] Delivery report includes absolute paths to all artifacts and documents Firebase SHA-1 / Play Integrity limitations?
+
