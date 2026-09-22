@@ -33,22 +33,31 @@ Assess complexity/risk based on: number of layers touched (single layer vs multi
 - **Complex / High Risk / Multi-tier** request → mandatory `02-plan` (may follow `01-brainstorm` if both ambiguous and complex).
 - **Simple, Clear, Single-layer, Low Risk** request → bypass both brainstorm and plan, enter the TDD loop directly.
 
-### Phase 4: Route to Scenario
-**Objective**: Select exactly 1 of 6 scenarios and sequentially coordinate child skills, waiting for approval at checkpoint gates.
+### Phase 4: Route to Scenario & Checkpoint Gates
+**Objective**: Select exactly 1 of 6 scenarios and sequentially coordinate child skills, strictly pausing for user approval at checkpoint gates.
 
 | # | Condition | Skill Sequence |
 |---|---|---|
 | 1 | Simple implementation | `06-test` (Red) → `03-implement` (Green+Refactor)* → `07-review` |
-| 2 | Ambiguous implementation | `01-brainstorm` → approval → `06-test` (Red) → `03-implement` (Green+Refactor)* → `07-review` |
-| 3 | Complex / high risk / multi-tier implementation | `01-brainstorm` → approval → `02-plan` → approval → [multiple parallel TDD waves per atomic behavior]* → `07-review` |
+| 2 | Ambiguous implementation | `01-brainstorm` → user approval (`docs/specs/spec-<name>.md`) → `06-test` (Red) → `03-implement` (Green+Refactor)* → `07-review` |
+| 3 | Complex / high risk / multi-tier implementation | `01-brainstorm` → user approval (`docs/specs/spec-<name>.md`) → `02-plan` → user approval (`docs/plans/plan-<name>.md`) → [multiple parallel TDD waves per atomic behavior]* → `07-review` |
 | 4a | Unknown-cause bug, simple | `04-bugfinder` → `06-test` (Red) → `05-fix` (Green+Refactor)* → `07-review` |
-| 4b | Unknown-cause bug, complex / multi-tier | `04-bugfinder` → `02-plan` → approval → [multiple waves `06-test` Red → `05-fix` Green]* → `07-review` |
+| 4b | Unknown-cause bug, complex / multi-tier | `04-bugfinder` → `02-plan` → user approval (`docs/plans/plan-<name>.md`) → [multiple waves `06-test` Red → `05-fix` Green]* → `07-review` |
 | 5 | Known-cause bug, simple | `06-test` (Red) → `05-fix` (Green+Refactor)* → `07-review` |
-| 6 | Known-cause bug, complex | `02-plan` → approval → [multiple waves `06-test` Red → `05-fix` Green]* → `07-review` |
+| 6 | Known-cause bug, complex | `02-plan` → user approval (`docs/plans/plan-<name>.md`) → [multiple waves `06-test` Red → `05-fix` Green]* → `07-review` |
 
 (*) Repeat per atomic behavior unit; if TDD is infeasible for a specific unit (spike, exploratory UI), invert to implement/fix → test for that specific unit only; see `references/tdd-exception-handling.md`.
 
-After selecting the scenario, the orchestrator invokes each child skill in strict order, passing: original request description, involved layers, brainstorm/plan results (if any), and current Red/Green state.
+#### Mandatory Approval Checkpoints:
+1. **Brainstorm Checkpoint (`01-brainstorm`)**:
+   - All questions must include an open write-in option for custom user answers.
+   - After questions are addressed, a comprehensive summary must be presented.
+   - **Mandatory pause**: wait for user review, supplementation (if needed), and explicit approval.
+   - Upon approval, the spec is saved to `docs/specs/spec-<name>.md` in Vietnamese Markdown. The orchestrator must not proceed until approved.
+2. **Plan Checkpoint (`02-plan`)**:
+   - The plan artifact is generated and saved to `docs/plans/plan-<name>.md` in Vietnamese Markdown.
+   - **Mandatory pause**: strictly halt execution and wait for user review, additions/modifications, and explicit approval.
+   - The orchestrator and child skills must never advance to TDD waves / implementation without explicit user approval.
 
 ### Phase 5: Review Gate — Mandatory Re-route on 07-review Failure
 **Objective**: Handle failure results from `07-review` by mandating a return to the appropriate bug-fix branch (4a/4b/5/6), applicable to **all** original scenarios (even when the original scenario was already 4/5/6).
@@ -65,6 +74,8 @@ Before routing, output a brief summary block: Domain check (pass/reject + reason
 - Do not arbitrarily bypass `04-bugfinder` when the bug's cause is unclear, even if the user seems in a rush.
 - Do not arbitrarily bypass `02-plan` when the request touches ≥2 layers or changes DB schema / API contracts, even if individual parts appear simple.
 - Do not combine approval steps of `01-brainstorm` and `02-plan` into one if both are mandatory — each requires separate confirmation before proceeding.
+- Do not proceed past `01-brainstorm` before the user reviews, supplements (if needed), and approves the summary, and `docs/specs/spec-<name>.md` is saved.
+- Do not proceed past `02-plan` to TDD execution before the user reviews, supplements (if needed), and explicitly approves `docs/plans/plan-<name>.md`.
 - Do not guess the scenario when input signals are insufficient for classification (e.g., unclear whether it is a bug or new feature) — ask a brief clarifying question instead of guessing.
 - Do not treat an `07-review` failure as pipeline completion or arbitrarily jump back to `03-implement`/`05-fix` outside the standard pipeline — must go through Phase 5 to select the appropriate 4a/4b/5/6 branch.
 - Do not auto-loop Phase 5 indefinitely when the same issue fails repeatedly — stop on the 3rd recurrence and report to the user.
@@ -73,7 +84,7 @@ Before routing, output a brief summary block: Domain check (pass/reject + reason
 - [ ] Has the domain gate run with a clear pass/reject conclusion before routing?
 - [ ] Has the request been properly classified into 1 of the 3 groups (implementation / known bug / unknown bug)?
 - [ ] Does the selected scenario match the 6-scenario table without arbitrary improvisation?
-- [ ] If a scenario with mandatory brainstorm/plan is selected, is there an approval wait step before proceeding?
+- [ ] Are the mandatory approval checkpoints respected (brainstorm summary approved + spec created; plan approved) before advancing?
 - [ ] Are child skills invoked in the correct order, passing involved layers and necessary context?
 - [ ] If `07-review` fails, is re-routing to the proper 4a/4b/5/6 branch enforced (for all original scenarios, including 4/5/6) without skipping Phase 5?
 - [ ] Is the new bug-fix branch chosen based on root cause/complexity from the `07-review` report itself, freshly re-evaluated rather than copying previous complexity?
