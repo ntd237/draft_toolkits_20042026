@@ -1,0 +1,30 @@
+{
+  "name": "ui-design-toolkit",
+  "version": "3.1.0",
+  "description": "Spec-first UI/UX design toolkit — 6 cohesive skills (00-05) covering UX architecture, design system tokens & components, responsive layouts (Mobile, Tablet, PC), multi-platform recipes (Web, Mobile, Desktop, Game), WCAG 2.2 QA, and static sample interface generation (vanilla HTML/CSS/JS).",
+  "author": {
+    "name": "ntd237",
+    "email": "ntd237.work@gmail.com",
+    "url": "https://github.com/ntd237"
+  },
+  "homepage": "https://github.com/ntd237/prompts",
+  "repository": "https://github.com/ntd237/prompts",
+  "license": "MIT",
+  "keywords": [
+    "ui-design",
+    "design-system",
+    "ux-research",
+    "service-blueprint",
+    "information-architecture",
+    "design-tokens",
+    "color-system",
+    "typography",
+    "vietnamese-typography",
+    "responsive-layout",
+    "components",
+    "accessibility",
+    "wcag",
+    "spec-first"
+  ],
+  "skills": "./skills"
+}

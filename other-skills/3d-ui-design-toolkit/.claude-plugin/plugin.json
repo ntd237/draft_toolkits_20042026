@@ -1,0 +1,27 @@
+{
+  "name": "3d-ui-design-toolkit",
+  "version": "1.1.0",
+  "description": "Spec-first 3D UI design toolkit — 6 cohesive skills (00-05) covering spatial UX architecture, 3D design tokens & materials, engine integration (Web3D, Unity, Unreal, XR), spatial performance QA, and in-browser sample interface generation (vanilla HTML/CSS/JS + optional vendored Three.js).",
+  "author": {
+    "name": "ntd237",
+    "email": "ntd237.work@gmail.com",
+    "url": "https://github.com/ntd237"
+  },
+  "homepage": "https://github.com/ntd237/prompts",
+  "repository": "https://github.com/ntd237/prompts",
+  "license": "MIT",
+  "keywords": [
+    "3d-ui",
+    "spatial-ui",
+    "diegetic-ui",
+    "web3d",
+    "threejs",
+    "unity-ui",
+    "unreal-ui",
+    "visionos",
+    "meta-quest",
+    "spatial-audio",
+    "spec-first"
+  ],
+  "skills": "./skills"
+}
