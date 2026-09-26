@@ -28,11 +28,13 @@ Khi được kích hoạt:
 ### Bước 1: Thu thập bằng chứng theo giai đoạn
 - **Giai đoạn 1 (Keyframe QA — Soi ảnh tĩnh trước khi render video)**:
   - Kiểm tra các file ảnh `assets/keyframes/<shot_id>_keyframe.png` so với `assets/characters/CHAR-xx_anchor.*`.
+  - Keyframe có thể do skill 10-flow-executor gen tự động; bằng chứng bổ sung là các ảnh trong `assets/qa-frames/` (frame trích tự động).
   - Giúp chặn lỗi lệch mặt/sai bối cảnh ngay từ ảnh tĩnh, tránh lãng phí credit và thời gian render video.
 - **Giai đoạn 2 (Video Clip QA — Soi video clip sau khi animate/lip-sync)**:
   - Kiểm tra các file clip trong `<project>/clips/` hoặc mô tả clip do người dùng cung cấp.
+  - Bằng chứng tự động: khi chạy chế độ Auto, skill 10-flow-executor trích frame từ mỗi clip vào `assets/qa-frames/Sxx_f1.png …` (số lượng theo `qa_frames_per_clip` trong config) — dùng các frame này làm bằng chứng trực tiếp, không cần người dùng mô tả clip.
   - Có thể QA từng lô theo `generate_order` trong `prompts.json` — ưu tiên QA sớm shot "thiết lập" của nhân vật.
-- KHÔNG đánh giá khi không có bằng chứng nào — hỏi trước.
+- KHÔNG đánh giá khi không có bằng chứng nào — hỏi trước. Trong chế độ Auto, nếu shot có clip trong clips/ mà thiếu frame QA → ghi `NOT-CHECKED` và liệt kê vào việc cần orchestrator chạy lại trích frame.
 
 ### Bước 2: Kiểm lớp 1 — Khớp nội dung & Khuôn mặt (vs shotlist & bible)
 Với từng shot / keyframe, đối chiếu:

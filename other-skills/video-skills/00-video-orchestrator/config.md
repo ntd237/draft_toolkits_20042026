@@ -81,3 +81,35 @@ Cột "Mặc định" chỉ là ĐỀ XUẤT trình bày cho người dùng khi 
    - Shot "thiết lập" chạy trước: lần xuất hiện quan trọng nhất của nhân vật generate đầu tiên để chốt chuẩn mặt; các shot còn lại của nhân vật tái dùng seed/anchor đó.
    - Shot mở màn bối cảnh đầu nhóm phụ: shot wide đủ đội hình/bối cảnh là chuẩn tham chiếu hình ảnh cho các shot nhóm sau.
    - Dừng kiểm giữa chừng: Soi ảnh tĩnh keyframe trước khi bấm render video — không chạy video mù quáng khi chưa chốt ảnh tĩnh.
+
+## 8. Tự động hóa Google Flow (Automation Policy)
+
+Phần này dành cho skill `10-flow-executor` khi tự động hóa Google Flow qua browser automation. Tất cả tham số dưới đây là ĐỀ XUẤT — không được áp dụng im lặng; orchestrator PHẢI hỏi người dùng chốt trước khi chạy và ghi kết quả chốt vào `concept.md`.
+
+### 8.1. Tham số tự động hóa (đề xuất, KHÔNG áp dụng im lặng)
+
+| Tham số | Mặc định | Ghi chú |
+|---|---|---|
+| `flow_url` | `https://labs.google/fx/tools/flow` | Đích browser automation của skill `10-flow-executor` |
+| `generation_timeout_s` | `600` | Trần chờ tối đa cho 1 lượt generate trên Flow UI |
+| `poll_interval_s` | `15` | Nhịp kiểm tra kết quả (smart-sync, không sleep cứng) |
+| `max_attempts_per_shot` | `2` | Trần retry kỹ thuật mỗi shot mỗi vòng |
+| `max_fix_rounds` | `3` | Đã định nghĩa ở mục 6 (vòng lặp QA) — chỉ tham chiếu, không nhân bản giá trị mới |
+| `qa_frames_per_clip` | `4` | Số frame trích mỗi clip làm bằng chứng QA |
+| `qa_frames_dir` | `assets/qa-frames/` | Nơi lưu frame QA (dưới `<project>/`) |
+| `execution_state_file` | `execution-state.json` | Artifact trạng thái resume của `10-flow-executor` (dưới `<project>/`) |
+| `keyframe_source` | `auto` | `auto` = dùng tính năng sinh ảnh của Flow khi khả dụng; `external` = keyframe do công cụ ngoài (Midjourney/Flux), executor đánh dấu shot là MANUAL |
+
+### 8.2. Quy tắc chế độ Auto (semi-auto 2 pha)
+
+- **Pha A (sinh keyframe)**: generate keyframe cho cả lô shot + chuẩn bị bằng chứng keyframe (ghi path vào execution-state, không trích frame cho ảnh tĩnh), sau đó DỪNG ở **Keyframe Gate** (mục 5) — người dùng duyệt cả lô keyframe một lần, không duyệt từng shot rời rạc.
+- **Pha B (động hóa video)**: chỉ chạy khi Keyframe Gate QUA. Tự động generate video → QA → vòng fix liên tục, chỉ dừng khi một trong các điều kiện xảy ra:
+  - QA Gate (mục 5) QUA — tất cả clip đạt;
+  - hết `max_fix_rounds` (đã định nghĩa ở mục 6) — dừng và báo cáo người dùng kèm danh sách lỗi còn lại;
+  - lỗi session/quota của Flow — dừng, lưu trạng thái vào `execution-state.json` và báo người dùng.
+
+### 8.3. Quy tắc an toàn
+
+- Chỉ dùng phiên đăng nhập Google Flow **thật của người dùng** qua browser automation; không tạo tài khoản giả, không dùng credential lạ.
+- KHÔNG đánh cắp token, cookie hay bất kỳ thông tin xác thực nào từ phiên trình duyệt.
+- KHÔNG tự giải reCAPTCHA; gặp reCAPTCHA hoặc hết quota → dừng ngay và báo người dùng xử lý thủ công.

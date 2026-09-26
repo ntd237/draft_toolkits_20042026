@@ -15,3 +15,6 @@ tests/
 transactions/
 custom-instructions/
 prompt-injection-defense/
+llm-skills/
+mobile-game-skills/
+cv-skills/
