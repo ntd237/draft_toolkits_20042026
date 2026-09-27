@@ -56,31 +56,31 @@ Sau đó xây dựng **Tổng quan dải chương (Arc Overview)**: Tóm tắt n
 ## Định dạng đầu ra
 
 ```markdown
-# 📖 TÓM TẮT TIỂU THUYẾT: [TÊN TRUYỆN] (NẾU XÁC ĐỊNH ĐƯỢC)
+# TÓM TẮT TIỂU THUYẾT: [TÊN TRUYỆN] (NẾU XÁC ĐỊNH ĐƯỢC)
 > **Dải chương**: Từ Chương [X] đến Chương [Y] | **Tổng số chương**: [Z] chương
 
 ---
 
-## 🌟 TỔNG QUAN DẢI CHƯƠNG [X] - [Y]
+## TỔNG QUAN DẢI CHƯƠNG [X] - [Y]
 *(Tóm tắt cô đọng 1–2 đoạn văn về diễn biến cốt truyện chính, bước ngoặt lớn và tiến trình phát triển của dải chương này).*
 
 ---
 
-## 📜 CHI TIẾT TỪNG CHƯƠNG
+## CHI TIẾT TỪNG CHƯƠNG
 
-### 🔹 Chương [X]: [Tên Chương]
-- **📍 Bối cảnh & Nhân vật**: [Địa điểm diễn ra] | [Các nhân vật xuất hiện chính]
-- **⚡ Diễn biến chính**:
+### Chương [X]: [Tên Chương]
+- **Bối cảnh & Nhân vật**: [Địa điểm diễn ra] | [Các nhân vật xuất hiện chính]
+- **Diễn biến chính**:
   - [Sự kiện 1: Khởi đầu chương hoặc tiếp nối diễn biến trước...]
   - [Sự kiện 2: Biến cố/xung đột/cuộc đối thoại quan trọng...]
   - [Sự kiện 3: Hành động quyết định hoặc kết quả giải quyết...]
-- **🎯 Điểm nhấn / Kết chương**: [Tình huống kết thúc, cú twist hoặc câu hỏi mở ở cuối chương].
+- **Điểm nhấn / Kết chương**: [Tình huống kết thúc, cú twist hoặc câu hỏi mở ở cuối chương].
 
 *(Lặp lại cấu trúc trên cho các chương tiếp theo trong dải)*
 
 ---
 
-## 🔑 ĐIỂM NHẤN CỐT TRUYỆN & TIẾN TRIỂN NHÂN VẬT
+## ĐIỂM NHẤN CỐT TRUYỆN & TIẾN TRIỂN NHÂN VẬT
 - **Chuyển biến nhân vật**: [Sự thay đổi về tâm lý, cảnh giới, sức mạnh hoặc quan hệ giữa các nhân vật].
 - **Thế lực & Mối quan hệ**: [Liên minh mới, kẻ thù xuất hiện hoặc mâu thuẫn mới nảy sinh].
 - **Manh mối / Hố chưa lấp (Foreshadowing)**: [Các chi tiết bí ẩn được tác giả cài cắm cho các chương sau].
