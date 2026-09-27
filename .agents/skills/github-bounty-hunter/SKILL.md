@@ -97,7 +97,7 @@ To enable automated searches and operations, configure credentials in your envir
 ## Output Format
 Deliver structured execution reports at each milestone:
 ```markdown
-### 🎯 Bounty Hunter Milestone Report: [Stage Name]
+### Bounty Hunter Milestone Report: [Stage Name]
 - **Target Issue**: #[id] - [Title] ([owner/repo])
 - **Bounty Platform**: [Algora | Polar | Native] | **Reward**: [$Amount]
 - **Status**: [Triage | Repro | Claimed | Implementing | PR Open | Merged]
