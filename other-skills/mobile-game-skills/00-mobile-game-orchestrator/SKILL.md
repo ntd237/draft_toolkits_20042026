@@ -1,6 +1,6 @@
 ---
 name: 00-mobile-game-orchestrator
-description: "Master orchestrator and domain gatekeeper for 2D/3D cross-platform mobile game development (iOS & Android). Classifies requests into 3 groups, assesses blast radius across game engine loops and platform runtimes, coordinates 6 canonical pipelines, enforces TDD discipline (Red-Green-Refactor) with skip and inverted mechanisms, manages approval checkpoints, and drives the Post-Review Bug Loop. Mandatory entrypoint for all mobile game development tasks."
+description: "Master orchestrator and domain gatekeeper for 2D/3D cross-platform mobile game development (iOS & Android, including app-level build/release). Classifies requests into 3 groups, assesses blast radius across game engine loops and platform runtimes, coordinates 6 canonical pipelines, enforces TDD discipline (Red-Green-Refactor) with skip and inverted mechanisms, manages approval checkpoints, drives the Post-Review Bug Loop, and owns the mandatory harness execution log mechanism (docs/harness-logs/). Mandatory entrypoint for all mobile game development tasks."
 ---
 
 # 00-mobile-game-orchestrator — Mobile Engine & Systems Orchestrator
@@ -13,9 +13,10 @@ Triggers for any request touching 2D/3D mobile game development: gameplay mechan
 ### Phase 1: Domain Gatekeeper
 **Objective**: Confirm the request falls strictly within 2D/3D mobile game development.
 
-1. **In-Scope Evaluation**: Accepts tasks involving mobile game architectures (Unity C#, Godot C#/GDScript, custom C++ mobile engines), mobile rendering (Metal, Vulkan, OpenGLES, URP, Draw Call batching), device ergonomics (safe area notches, aspect ratios, multi-touch), and mobile OS lifecycles (`OnApplicationPause`, focus loss).
-2. **Out-of-Scope Rejection**: If the task is entirely unrelated to game client systems (pure web backend/frontend, enterprise databases, desktop-only enterprise software, pure data science/ML training) → politely decline, declare that this toolkit specializes in 2D/3D mobile game development, and halt.
-3. **Hybrid Handling**: If a game request includes backend services (e.g., game server API, matchmaking), restrict this toolkit to the client-side game architecture and delegate server services to web/backend toolkits.
+1. **In-Scope Evaluation**: Accepts tasks involving mobile game architectures (Unity C#, Godot C#/GDScript, custom C++ mobile engines), mobile rendering (Metal, Vulkan, OpenGLES, URP, Draw Call batching), device ergonomics (safe area notches, aspect ratios, multi-touch), mobile OS lifecycles (`OnApplicationPause`, focus loss), ad/IAP SDK integration, and **app-level build/release work** — build configurations, code signing/keystore setup, build variants (dev/staging/release), CI pipelines for the game client, and store listing assets preparation (icons, screenshots, store metadata files).
+2. **Deployment boundary**: only developer-account/store-console operations (uploading builds to App Store Connect / Google Play Console, account management, app review correspondence) are out of scope — hand those off to external tooling and clearly note which portion requires other tools.
+3. **Out-of-Scope Rejection**: If the task is entirely unrelated to game client systems (pure web backend/frontend, enterprise databases, desktop-only enterprise software, pure data science/ML training) → politely decline, declare that this toolkit specializes in 2D/3D mobile game development, and halt.
+4. **Hybrid Handling**: If a game request includes backend services (e.g., game server API, matchmaking), restrict this toolkit to the client-side game architecture and delegate server services to web/backend toolkits.
 
 ### Phase 2: Request Classification (3 Groups)
 **Objective**: Classify the request into 1 of 3 operational groups:
@@ -135,6 +136,15 @@ handoff:
       evidence: "GC Profiler trace reveals heap allocation on every frame tick"
 ```
 
+## Harness Execution Log (Mandatory)
+Every pipeline run (Pipelines #1–#6) MUST produce a harness execution log file — in-chat YAML handoff blocks NEVER exempt or replace it.
+
+1. **Before routing to the first skill**, Read `references/execution-log.md` and follow its schema verbatim: create `docs/harness-logs/<category>_<task_name>_<yyyymmdd>_<hhmmss>.md` (timestamp from a real shell command, never guessed), creating the directory if needed.
+2. **After each child skill completes**, append its per-skill section immediately (do not batch at the end) — the orchestrator appends on behalf of the child skills.
+3. **At pipeline completion** (including FAIL outcomes and Post-Review Bug Loop re-routes), append the pipeline summary section. For review-fail re-routes, keep the same log file and append the re-route sections — never create a second file for the same task.
+4. Log content is written in Vietnamese; skill names, file paths, commands, and status keywords (COMPLETED, FAILED, PARTIAL, PASS, FAIL) stay in English.
+5. Single-skill, read-only advisory tasks (pure explanation, ad-hoc Q&A) do not require a log.
+
 ## Don'ts
 - Do not accept non-game web/backend or desktop enterprise tasks without passing the Domain Gate.
 - Do not dispatch `03-mobile-game-implement` to fix bugs or remediate `07-mobile-game-review` defects — all defect fixes belong strictly to `05-mobile-game-fix`.
@@ -142,6 +152,8 @@ handoff:
 - Do not advance past approval gates of `01-mobile-game-brainstorm` or `02-mobile-game-plan` without explicit user sign-off.
 - Do not apply Fallback Ordering while TDD is active without recording an approved skip reason (`user-request`, `no-test-framework`, or `config-only`).
 - Do not allow the Post-Review Bug Loop to exceed 3 iterations on the same defect.
+- Do not run any pipeline (1–6) without creating the harness execution log in `docs/harness-logs/` before the first skill runs and appending each skill section after completion — the in-chat YAML handoff never replaces the log file.
+- Do not create a second log file for the same task on Post-Review Bug Loop re-routes — append to the existing one.
 
 ## Quality Checklist
 - [ ] Has the Domain Gate confirmed the request belongs to 2D/3D mobile game development?
@@ -150,3 +162,4 @@ handoff:
 - [ ] Are mandatory approval checkpoints enforced for brainstorm specs and implementation plans?
 - [ ] Does the Post-Review Bug Loop route defects exclusively to `05-mobile-game-fix`?
 - [ ] Are structured YAML handoff blocks populated across all skill transitions?
+- [ ] Was the harness execution log created in `docs/harness-logs/` before the first skill ran, with one section appended per completed skill and the pipeline summary appended at the end (per `references/execution-log.md`)?

@@ -13,6 +13,9 @@ Phát triển game di động đòi hỏi sự cân bằng nghiêm ngặt giữa
 3. **Strict Mobile TDD & Exception Engine**: Kỷ luật Test-Driven Development (Red → Green → Refactor) mặc định, tích hợp 3 tiêu chí bỏ qua TDD (Skip criteria) và luồng kiểm thử đảo chiều (Inverted TDD) cho spikes/game feel.
 4. **Zero-GC per Frame & Mobile Rendering Discipline**: Kiểm soát rác bộ nhớ (GC allocation) trong các hàm tick (`Update`, `FixedUpdate`), tối ưu hóa Draw Call batching, Sub-Canvas và bộ đệm an toàn tai thỏ (Safe Area).
 5. **Post-Review Bug Loop**: Tự động chuyển giao sang luồng sửa lỗi chuyên biệt (`05-mobile-game-fix`) khi khâu review phát hiện lỗi nghiêm trọng.
+6. **Harness Execution Log**: Mỗi pipeline run bắt buộc tạo log thực thi tại `docs/harness-logs/` (tạo trước khi skill đầu tiên chạy, append một section sau mỗi skill, một file cho mỗi pipeline run) — YAML handoff trong chat không thay thế được log file. Chi tiết trong `00-mobile-game-orchestrator/references/execution-log.md`.
+
+> **Lưu ý về engine**: Bộ toolkit tối ưu chính cho Unity (C#) — toàn bộ ví dụ minh họa dùng Unity API. Godot (C#/GDScript) và custom C++ engine được chấp nhận ở mức best-effort: tuân theo cùng kỷ luật quy trình (TDD, zero-GC trong tick loop, decoupling), quy đổi tương đương API theo engine đang dùng.
 
 ---
 
@@ -97,10 +100,11 @@ Khi `07-mobile-game-review` trả về **FAIL** (do có ≥1 lỗi `[BLOCKING]` 
 
 ## 6. Chính Sách Thư Mục Lưu Test (Test Directory Location Policy)
 
-Thứ tự ưu tiên vị trí thư mục test dưới root dự án:
-1. `tests/` — Nếu đã tồn tại trực tiếp dưới thư mục gốc.
-2. `test/` — Nếu `tests/` chưa có, nhưng `test/` đã tồn tại.
-3. Tạo mới `tests/` trực tiếp dưới thư mục gốc nếu cả hai chưa có.
+Thứ tự ưu tiên vị trí thư mục test:
+1. **Quy ước engine/dự án ưu tiên tuyệt đối** — Unity Test Framework yêu cầu test assembly trong `Assets/<...>/Tests/` (kèm asmdef) hoặc `Packages/`; Godot GUT chạy theo thư mục cấu hình trong project settings/`.gutcfg`. Không bao giờ đặt test ở nơi runner của engine không phát hiện được.
+2. `tests/` — Nếu đã tồn tại trực tiếp dưới thư mục gốc.
+3. `test/` — Nếu `tests/` chưa có, nhưng `test/` đã tồn tại.
+4. Tạo mới `tests/` trực tiếp dưới thư mục gốc nếu không có quy ước engine nào và cả hai chưa có.
 *(Nghiêm cấm lưu file test rải rác ngoài thư mục quy chuẩn).*
 
 ---

@@ -33,6 +33,9 @@ Invoked by `00-mobile-game-orchestrator` for complex features (Pipeline 3), comp
    - If player save data or game state changes: define backward-compatible serialization schemas (versioned JSON/Protobuf/Binary) and migration functions with rollback protection.
 4. **App Lifecycle Transitions**:
    - Handling `OnApplicationPause`, app backgrounding, focus loss, and interruption recovery (phone calls, system alerts).
+5. **Security-Sensitive Flows**: if the feature involves IAP/purchases, save data, currency/economy, or leaderboards: assign the controls each wave must implement (server-side receipt validation, save integrity protection, server-authoritative boundaries) and how they will be verified — the full audit standard lives in `../07-mobile-game-review/references/game-security-checklist.md`.
+6. **Monetization & Live Ops Integration**: if new purchasable content or live content is introduced: plan sandbox/test product ID usage, the receipt validation flow, and remote config/feature-flag exposure so content can be tuned or disabled post-release without a store update.
+7. **Observability Requirements**: assign crash-reporting coverage (new subsystems registered with the project's crash SDK) and analytics events to the relevant waves, so failures in production are diagnosable and feature usage is measurable.
 
 ### Phase 3: Wave Sequencing & Plan Artifact Generation
 **Objective**: Group units into executable waves and generate the comprehensive plan artifact.
@@ -54,6 +57,7 @@ Save the plan file to `docs/plans/plan-<name>.md` in **Vietnamese Markdown** con
 - Tổng quan kiến trúc & phạm vi (các hệ thống game liên quan, tách biệt logic khỏi engine loop).
 - Kế hoạch rủi ro đa nền tảng (iOS Metal vs Android Vulkan, Safe Area tai thỏ, vòng đời Pause/Resume).
 - Kế hoạch migration dữ liệu lưu trữ (Save Data schema & versioning).
+- Kế hoạch security/monetization/live-ops/observability (khi tính năng liên quan IAP, save, economy, remote config, crash reporting, analytics).
 - Phân chia các Wave thực thi chi tiết (danh sách unit, tệp mục tiêu, acceptance criteria, chế độ TDD).
 - Thứ tự thực thi đề xuất cho `00-mobile-game-orchestrator`.
 
@@ -72,5 +76,6 @@ In chat: Provide a summary and file link, then **halt execution and prompt the u
 - [ ] Are pure game logic units decoupled from engine-specific lifecycle loops?
 - [ ] Are cross-platform iOS (Metal) and Android (Vulkan/lifecycle) risks documented?
 - [ ] Are safe-area notch and aspect ratio considerations included?
+- [ ] Are security controls, monetization/live-ops integrations, and observability requirements assigned to waves whenever the corresponding dimensions were flagged in brainstorming?
 - [ ] Are units structured into dependency-ordered waves with concrete acceptance criteria?
 - [ ] Did execution strictly halt at the Approval Gate awaiting explicit user sign-off?

@@ -41,6 +41,13 @@ Invoked by `00-mobile-game-orchestrator` when gameplay mechanics, control scheme
 2. Clearly categorize criteria into:
    - **Deterministic Logic**: Combat math, state transitions, cooldowns, score systems (strictly standard TDD test-first).
    - **Inverted TDD Candidates**: Visual juice, camera shake curves, particle bursts, feel tuning (flagged for Inverted TDD per `references/tdd-exception-and-skip.md`).
+3. **Non-Functional Criteria Sweep**: Before finalizing, screen the feature against the dimensions relevant to its scope and add explicit criteria for each that applies (mark N/A for those that do not, so the omission is a decision rather than an oversight):
+   - **Security & integrity**: IAP/entitlement flows, save data protection, economy/leaderboard trust boundaries (audit standard: `../07-mobile-game-review/references/game-security-checklist.md`).
+   - **Monetization & live ops**: sandbox/test product IDs, receipt validation flow, remote config/feature-flag exposure for the new content.
+   - **Analytics & observability**: events to track for the feature, crash-reporting coverage for new subsystems.
+   - **Localization**: player-facing strings routed through the localization system.
+   - **Game accessibility**: color-independent feedback, text legibility, input alternatives.
+   - **Audio**: new sources routed through mixer buses, lifecycle mute behavior.
 
 ### Phase 4: Mandatory Review Gate & Spec Generation
 **Objective**: Present findings, pause for user review, and generate the final specification.
@@ -71,6 +78,7 @@ Invoked by `00-mobile-game-orchestrator` when gameplay mechanics, control scheme
 - [ ] Did every question include an open custom write-in option?
 - [ ] Were mobile touch ergonomics (swipes, virtual stick, dead zones) explicitly clarified?
 - [ ] Were mobile performance factors (Draw Calls, GC allocations, thermal limits) evaluated?
+- [ ] Was the non-functional criteria sweep performed (security / monetization & live ops / analytics / localization / accessibility / audio), with non-applicable dimensions explicitly marked N/A?
 - [ ] Did execution halt at the Review Gate for explicit user review and approval?
 - [ ] Is `docs/specs/spec-<name>.md` authored in Vietnamese Markdown after approval?
 - [ ] Were zero production code files modified?

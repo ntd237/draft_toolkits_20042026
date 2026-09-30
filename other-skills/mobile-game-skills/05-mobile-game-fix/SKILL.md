@@ -36,6 +36,7 @@ Invoked by `00-mobile-game-orchestrator` in defect resolution pipelines (Pipelin
 1. **Impact Scope Propagation**: If the root cause pattern exists across multiple entities or weapons (e.g., unpooled instantiation replicated across several classes per `04-mobile-game-bugfinder`'s blast radius), apply identical, consistent fixes to all affected classes.
 2. **Full Suite Regression Check**: Execute the entire related test suite to guarantee that fixing the defect did not break adjacent gameplay mechanics, save data integrity, or UI state.
 3. **Handoff**: Transition to `07-mobile-game-review` (or to `06-mobile-game-test` under Scenario A if TDD was skipped).
+4. When the fix touches concerns covered by `../03-mobile-game-implement/references/mobile-game-implementation-standards.md` (monetization grants, remote config, audio buses, localization strings, networking trust boundaries, etc.), the corrected code must comply with those standards as well.
 
 ## Output Format
 Provide code diffs and a structured remediation summary:

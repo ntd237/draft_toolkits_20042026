@@ -36,6 +36,9 @@ Invoked by `00-mobile-game-orchestrator` during new implementation pipelines (Pi
 1. If running under standard TDD: prepare Green handoff for the next atomic behavior unit or transition to `07-mobile-game-review`.
 2. If running under TDD Skipped or Inverted TDD: hand off immediately to `06-mobile-game-test` (Scenario B: Post-Implementation Validation) to author safety tests.
 
+## Implementation Standards
+Beyond zero-GC discipline, authored code must observe the domain standards in `references/mobile-game-implementation-standards.md` — covering engine parity (Godot/C++ equivalents), monetization (sandbox testing, idempotent entitlement grants), live ops (remote config with safe defaults, feature flags), analytics & crash reporting (consent-gated, fire-and-forget), audio (mixer buses, voice limits, streaming), localization (no inline player-facing strings), store build & release (build variants, signing hygiene, verification path), and client-side networking (untrusted server data, reconnection safety). Standards never justify scope creep: apply only what the targeted tests and acceptance criteria demand, and report back when a standard conflicts with existing project conventions (project conventions win).
+
 ## Output Format
 Provide modified files/diffs and a concise summary:
 - Implemented behavior and mechanics.
