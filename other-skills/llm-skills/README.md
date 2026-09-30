@@ -13,6 +13,8 @@ Các ứng dụng LLM và GenAI có bản chất bất định (non-deterministi
 3. **Strict LLM TDD & Exception Engine**: Kỷ luật Test-Driven Development (Red → Green → Refactor) mặc định cho mọi thành phần xác định. Tích hợp 3 tiêu chí bỏ qua TDD (Skip criteria) và luồng kiểm thử đảo chiều (Inverted TDD) cho Prompt Prototyping / Reasoning Spikes.
 4. **Token Budget, Rate Limit & Resilience Discipline**: Kiểm soát cửa sổ ngữ cảnh (Context Window), bẫy lặp vô hạn gây cạn kiệt token, cơ chế retry với exponential backoff, circuit breaking và mô hình dự phòng (fallback models).
 5. **Post-Review Bug Loop**: Tự động chuyển giao sang luồng sửa lỗi chuyên biệt (`05-llm-fix`) khi khâu review phát hiện lỗi nghiêm trọng (prompt injection, schema mismatch, token blowup, gian lận TDD).
+6. **Harness Execution Log**: Mỗi pipeline run bắt buộc tạo log thực thi tại `docs/harness-logs/` (tạo trước khi skill đầu tiên chạy, append một section sau mỗi skill, một file cho mỗi pipeline run) — YAML handoff trong chat không thay thế được log file. Chi tiết trong `00-llm-orchestrator/references/execution-log.md`.
+7. **Evaluation Regression Gate**: Thay đổi prompt/tham số retrieval/model config phải chạy golden eval set và so sánh điểm với baseline đã ghi nhận (cùng model version); tụt điểm dưới ngưỡng sẽ chặn nghiệm thu. Chi tiết trong `06-llm-test/references/evaluation-engineering.md`.
 
 ---
 
@@ -99,11 +101,12 @@ Khi `07-llm-review` trả về **FAIL** (do có ≥1 lỗi `[BLOCKING]` như rò
 
 ## 6. Chính Sách Thư Mục Lưu Test (Test Directory Location Policy)
 
-Thứ tự ưu tiên vị trí thư mục test dưới root dự án:
-1. `tests/` — Nếu đã tồn tại trực tiếp dưới thư mục gốc.
-2. `test/` — Nếu `tests/` chưa có, nhưng `test/` đã tồn tại.
-3. Tạo mới `tests/` trực tiếp dưới thư mục gốc nếu cả hai chưa có.
-*(Nghiêm cấm lưu file test rải rác ngoài thư mục quy chuẩn).*
+Thứ tự ưu tiên vị trí thư mục test:
+1. **Quy ước dự án ưu tiên khi rõ ràng** — layout test hiện có (test colocated với code, cấu trúc monorepo package, hoặc đường dẫn test đã cấu hình trong runner) được tuân thủ nguyên trạng.
+2. `tests/` — Nếu đã tồn tại trực tiếp dưới thư mục gốc.
+3. `test/` — Nếu `tests/` chưa có, nhưng `test/` đã tồn tại.
+4. Tạo mới `tests/` trực tiếp dưới thư mục gốc nếu không có quy ước nào và cả hai chưa có.
+*(Nghiêm cấm lưu file test rải rác ngoài thư mục quy chuẩn; monorepo thì test nằm trong package bị thay đổi).*
 
 ---
 

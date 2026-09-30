@@ -1,6 +1,6 @@
 ---
 name: 07-llm-review
-description: "Performs comprehensive architectural, security, and performance code reviews for LLM & Generative AI applications. Audits prompt injection defenses, secret leaks, runaway token budget traps, exponential backoff/fallback handling, and verifies genuine TDD compliance without cheated tests. Issues strict PASS/FAIL verdicts, triggering the Post-Review Bug Loop on FAIL. Read-only — reports findings without modifying code."
+description: "Performs comprehensive architectural, security, and performance code reviews for LLM & Generative AI applications. Audits prompt injection defenses, content moderation, secret leaks, runaway token budget traps, exponential backoff/fallback handling, observability (tracing, cost attribution), prompt management (versioning, rollback), RAG/schema integrity, and verifies genuine TDD compliance without cheated tests. Issues strict PASS/FAIL verdicts, triggering the Post-Review Bug Loop on FAIL. Read-only — reports findings without modifying code."
 ---
 
 # 07-llm-review — LLM Code & Architecture Review
@@ -22,6 +22,7 @@ Mandatory final step across all 6 pipeline scenarios (#1 through #6), invoked by
    - Audit for hardcoded provider API keys (`sk-...`, `Bearer ...`).
    - Check for unredacted PII or system prompt leakage in user-facing responses.
    - Flag any hardcoded API key or credential leak as `[BLOCKING]`.
+3. **Content Safety & Moderation**: for user-facing generation fed by user-generated content, verify a moderation/output-filter layer exists per `references/llm-audit-signals.md` section 4 — shipping unfiltered generation when a filter was a stated requirement is `[BLOCKING]`.
 
 ### Phase 2: Token Budget, Cost & Resilience Audit
 **Objective**: Ensure changes prevent runaway token consumption and handle model provider failures gracefully.
@@ -33,6 +34,7 @@ Mandatory final step across all 6 pipeline scenarios (#1 through #6), invoked by
 2. **Rate Limits, Timeouts & Fallbacks**:
    - Verify API calls include explicit timeouts and exponential backoff retry logic on HTTP 429 / 5xx errors.
    - Check that multi-provider fallback chains catch provider-specific errors cleanly.
+3. **Observability**: verify new invocation paths emit traces (model, tokens, latency, feature attribution) per `references/llm-audit-signals.md` section 5 — untraced paths when tracing was a stated plan requirement are `[BLOCKING]`; unattributed token spend is `[ADVISORY]`.
 
 ### Phase 3: RAG Retrieval & Structured Schema Integrity Audit
 **Objective**: Confirm retrieval pipelines and structured parsers adhere to robustness standards.
@@ -42,6 +44,7 @@ Mandatory final step across all 6 pipeline scenarios (#1 through #6), invoked by
 2. **Context Window & Chunking Discipline**:
    - Verify chunk sizes and retrieval `top_k` do not exceed model context window bounds.
    - Ensure metadata (document ID, page, source URL) is preserved for citation tracking.
+3. **Prompt Management**: verify behavior-carrying prompts are versioned artifacts rather than scattered literals, and that prompt changes ship with eval coverage and a rollback path per `references/llm-audit-signals.md` section 5.
 
 ### Phase 4: TDD Compliance & Test Integrity Audit
 **Objective**: Detect TDD cheating and verify test substantive value.
@@ -94,6 +97,7 @@ Review report structured as:
 - [ ] Were API keys and secrets checked for hardcoding or exposure?
 - [ ] Were token budget limits (`max_tokens`) and loop limits verified?
 - [ ] Were retry backoff and rate-limiting protections audited?
+- [ ] When tracing, prompt versioning, or content moderation were stated requirements, were the corresponding signals (`references/llm-audit-signals.md` sections 4–5) audited — or explicitly reported as not applicable?
 - [ ] Was TDD compliance verified and checked for cheating signals?
 - [ ] Are findings strictly tagged with `[BLOCKING]` or `[ADVISORY]`?
 - [ ] If ≥1 `[BLOCKING]` issue exists, is FAIL issued with the YAML handoff block?

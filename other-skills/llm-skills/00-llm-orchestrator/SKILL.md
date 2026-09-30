@@ -1,6 +1,6 @@
 ---
 name: 00-llm-orchestrator
-description: "Master orchestrator and Domain Gatekeeper for LLM & Generative AI applications (RAG architectures, multi-agent workflows, tool/function calling, prompt engineering, context window management, and LLM evaluation). Classifies requests into 3 groups, assesses blast radius across token budgets and model dependencies, coordinates 6 canonical pipelines, enforces TDD discipline with skip and inverted mechanisms, manages approval checkpoints, and drives the Post-Review Bug Loop. Mandatory entrypoint for all LLM/GenAI tasks."
+description: "Master orchestrator and Domain Gatekeeper for LLM & Generative AI applications (RAG architectures, multi-agent workflows, tool/function calling, prompt engineering, context window management, and LLM evaluation). Classifies requests into 3 groups, assesses blast radius across token budgets and model dependencies, coordinates 6 canonical pipelines, enforces TDD discipline with skip and inverted mechanisms, manages approval checkpoints, drives the Post-Review Bug Loop, and owns the mandatory harness execution log mechanism (docs/harness-logs/). Mandatory entrypoint for all LLM/GenAI tasks."
 ---
 
 # 00-llm-orchestrator — LLM & GenAI Systems Orchestrator
@@ -135,6 +135,15 @@ handoff:
       evidence: "f'System: You are an assistant. {user_input}' allows prompt override"
 ```
 
+## Harness Execution Log (Mandatory)
+Every pipeline run (Pipelines #1–#6) MUST produce a harness execution log file — in-chat YAML handoff blocks NEVER exempt or replace it.
+
+1. **Before routing to the first skill**, Read `references/execution-log.md` and follow its schema verbatim: create `docs/harness-logs/<category>_<task_name>_<yyyymmdd>_<hhmmss>.md` (timestamp from a real shell command, never guessed), creating the directory if needed.
+2. **After each child skill completes**, append its per-skill section immediately (do not batch at the end) — the orchestrator appends on behalf of the child skills.
+3. **At pipeline completion** (including FAIL outcomes and Post-Review Bug Loop re-routes), append the pipeline summary section. For review-fail re-routes, keep the same log file and append the re-route sections — never create a second file for the same task.
+4. Log content is written in Vietnamese; skill names, file paths, commands, and status keywords (COMPLETED, FAILED, PARTIAL, PASS, FAIL) stay in English.
+5. Single-skill, read-only advisory tasks (pure explanation, ad-hoc Q&A) do not require a log.
+
 ## Don'ts
 - Do not accept non-LLM/GenAI tasks (e.g., pure CSS/React layout, native iOS/Android, standard SQL without AI) without passing the Domain Gate.
 - Do not dispatch `03-llm-implement` to fix bugs or remediate `07-llm-review` defects — all defect fixes belong strictly to `05-llm-fix`.
@@ -142,6 +151,8 @@ handoff:
 - Do not advance past approval gates of `01-llm-brainstorm` or `02-llm-plan` without explicit user sign-off.
 - Do not apply Fallback Ordering while TDD is active without recording an approved skip reason (`user-request`, `no-test-framework`, or `config-only`).
 - Do not allow the Post-Review Bug Loop to exceed 3 iterations on the same defect.
+- Do not run any pipeline (1–6) without creating the harness execution log in `docs/harness-logs/` before the first skill runs and appending each skill section after completion — the in-chat YAML handoff never replaces the log file.
+- Do not create a second log file for the same task on Post-Review Bug Loop re-routes — append to the existing one.
 
 ## Quality Checklist
 - [ ] Has the Domain Gate confirmed the request belongs to LLM & GenAI engineering?
@@ -150,3 +161,4 @@ handoff:
 - [ ] Are mandatory approval checkpoints enforced for brainstorm specs and implementation plans?
 - [ ] Does the Post-Review Bug Loop route defects exclusively to `05-llm-fix`?
 - [ ] Are structured YAML handoff blocks populated across all skill transitions?
+- [ ] Was the harness execution log created in `docs/harness-logs/` before the first skill ran, with one section appended per completed skill and the pipeline summary appended at the end (per `references/execution-log.md`)?

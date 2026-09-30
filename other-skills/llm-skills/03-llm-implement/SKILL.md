@@ -36,6 +36,9 @@ Invoked by `00-llm-orchestrator` during new implementation pipelines (Pipelines 
 1. If running under standard TDD: prepare Green handoff for the next atomic behavior unit or transition to `07-llm-review`.
 2. If running under TDD Skipped or Inverted TDD: hand off immediately to `06-llm-test` (Scenario B: Post-Implementation Validation) to author safety tests.
 
+## Implementation Standards
+Beyond the resilience rules above, authored code must observe the domain standards in `references/llm-implementation-standards.md` — covering observability & tracing (every LLM invocation traced with model, tokens, latency, cost attribution), prompt management (versioned prompt artifacts, eval-covered prompt changes, rollback), streaming & UX (cancellation stops billing, partial-JSON tolerance), caching (provider prompt caching; semantic cache only for non-personalized read-only queries), fine-tuning workflows (versioned datasets, post-train eval, rollback), and privacy & compliance (PII screening before third-party dispatch, retention rules). Standards never justify scope creep: apply only what the targeted tests and acceptance criteria demand, and report back when a standard conflicts with existing project conventions (project conventions win).
+
 ## Output Format
 Provide modified files/diffs and a concise summary:
 - Implemented LLM behavior, prompt templates, or parsers.

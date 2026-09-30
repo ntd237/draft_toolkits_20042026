@@ -37,6 +37,8 @@ Invoked by `00-llm-orchestrator` for complex features (Pipeline 3), complex unkn
    - Secret redaction (preventing API keys, PII, or internal system prompts from leaking into model responses).
 4. **Vector Database & Schema Migration**:
    - If embedding models change (e.g., dimension switch from 1536 to 3072): plan vector collection recreation, re-indexing scripts, and rollback strategies.
+5. **Observability & Tracing**: assign tracing coverage to the relevant waves — every new LLM invocation path registers spans/metadata (model, tokens, latency, feature identifier) in the project's tracing layer (Langfuse/LangSmith/OpenTelemetry) so `04-llm-bugfinder` Tier 0 can operate without code probes, and token cost is attributable per feature.
+6. **Privacy & Compliance Screening**: if user content flows to third-party model APIs, plan the PII/secret redaction layer at the gateway, the retention choice (provider zero-retention endpoints where required), and routing of sensitive workloads to self-hosted models per the model selection decision.
 
 ### Phase 3: Wave Sequencing & Plan Artifact Generation
 **Objective**: Group units into executable waves and generate the comprehensive plan artifact.
@@ -57,6 +59,7 @@ Invoked by `00-llm-orchestrator` for complex features (Pipeline 3), complex unkn
 Save the plan file to `docs/plans/plan-<name>.md` in **Vietnamese Markdown** containing:
 - Tổng quan kiến trúc & phạm vi (các hệ thống LLM liên quan, tách biệt logic xác định khỏi lời gọi mô hình).
 - Kế hoạch rủi ro LLM (Fallback models, Rate limits, Token quotas, Chống prompt injection).
+- Kế hoạch observability & privacy (tracing/cost attribution cho từng wave; redaction & retention khi gửi dữ liệu người dùng cho API bên thứ ba).
 - Kế hoạch migration Vector DB & Embeddings (nếu có thay đổi schema/dimension).
 - Phân chia các Wave thực thi chi tiết (danh sách unit, tệp mục tiêu, acceptance criteria, chế độ TDD).
 - Thứ tự thực thi đề xuất cho `00-llm-orchestrator`.
@@ -76,5 +79,6 @@ In chat: Provide a summary and file link, then **halt execution and prompt the u
 - [ ] Are deterministic components decoupled from live LLM network calls?
 - [ ] Are fallback models, rate limits, and token budgets addressed?
 - [ ] Are prompt injection and security defenses incorporated into the plan?
+- [ ] Are tracing coverage and privacy screening (redaction, retention, sensitive-workload routing) assigned to waves whenever the corresponding dimensions were flagged in brainstorming?
 - [ ] Are units structured into dependency-ordered waves with concrete acceptance criteria?
 - [ ] Did execution strictly halt at the Approval Gate awaiting explicit user sign-off?

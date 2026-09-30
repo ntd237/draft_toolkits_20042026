@@ -43,6 +43,13 @@ Invoked by `00-llm-orchestrator` when prompt requirements, model selection, retr
 2. Clearly categorize criteria into:
    - **Deterministic Logic**: Pydantic schema validation, text chunking bounds, token budget estimators, regex output extraction, tool schema validators (strictly standard TDD test-first).
    - **Inverted TDD Candidates**: Prompt spikes, exploratory zero-shot reasoning, persona tone calibration (flagged for Inverted TDD per `references/tdd-exception-and-skip.md`).
+3. **Non-Functional Criteria Sweep**: Before finalizing, screen the feature against the dimensions relevant to its scope and add explicit criteria for each that applies (mark N/A for those that do not, so the omission is a decision rather than an oversight):
+   - **Security**: prompt injection surface (direct + indirect via retrieved content), secret/PII exposure paths.
+   - **Observability**: tracing/cost attribution for the new invocation paths, eval coverage for probabilistic behavior (golden dataset needs — see `../06-llm-test/references/evaluation-engineering.md`).
+   - **Privacy & compliance**: PII/retention constraints for third-party model APIs, sensitive-workload routing.
+   - **Content safety**: moderation/output filtering requirements for user-facing generation.
+   - **Streaming & UX**: cancellation, partial-output handling, latency SLA for interactive paths.
+   - **Multilingual / multimodal**: language coverage and input modality constraints, when applicable.
 
 ### Phase 4: Mandatory Review Gate & Spec Generation
 **Objective**: Present findings, pause for user review, and generate the final specification.
@@ -73,6 +80,7 @@ Invoked by `00-llm-orchestrator` when prompt requirements, model selection, retr
 - [ ] Did every question include an open custom write-in option?
 - [ ] Were LLM trade-offs (Closed vs Open models, RAG vs Fine-tuning, Latency vs Cost) analyzed?
 - [ ] Were acceptance criteria separated into deterministic logic and probabilistic spikes?
+- [ ] Was the non-functional criteria sweep performed (security / observability / privacy / content safety / streaming / multilingual-multimodal), with non-applicable dimensions explicitly marked N/A?
 - [ ] Did execution halt at the Review Gate for explicit user review and approval?
 - [ ] Is `docs/specs/spec-<name>.md` authored in Vietnamese Markdown after approval?
 - [ ] Were zero production code files modified?

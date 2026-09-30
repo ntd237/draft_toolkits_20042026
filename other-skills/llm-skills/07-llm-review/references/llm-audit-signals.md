@@ -42,7 +42,28 @@ Runaway loops and unbounded token consumption risk operational bankrupcy and den
 
 ---
 
-## 4. TDD Cheating Audit Signals (BLOCKING)
+## 4. Content Safety & Moderation Signals
+
+| Audit Signal | Technical Violation | Correction | Severity |
+|---|---|---|---|
+| **Unfiltered User-Facing Generation** | Model output rendered to end users with no moderation layer despite user-generated input content | Apply provider moderation API / content filter on inputs and outputs for public-facing generation; blocklist known-banned categories | `BLOCKING` (when the feature ships user-generated content to end users without any agreed filter) / `ADVISORY` (dimension never agreed on) |
+| **Jailbreak-Relevant Surface** | Roleplay/persona instructions with no injection-resistant framing and tool access | Separate persona from permissions; tools validate arguments server-side regardless of prompt framing | `ADVISORY` |
+| **Harmful-Content Output Handling** | Safety refusals handled as generic errors, leaking internal guardrail logic | Map refusals to user-safe messages; log refusal categories (redacted) for monitoring | `ADVISORY` |
+
+---
+
+## 5. Observability & Prompt Management Signals
+
+| Audit Signal | Technical Violation | Correction | Severity |
+|---|---|---|---|
+| **Untraced LLM Invocation Path** | New model-calling code emits no trace (model, tokens, latency, outcome) to the project's tracing layer, making `04-llm-bugfinder` Tier 0 blind | Register spans/metadata per invocation (Langfuse/LangSmith/OpenTelemetry) with feature-level cost attribution | `BLOCKING` (if tracing was a stated plan requirement) / `ADVISORY` |
+| **Unattributed Token Spend** | Traces exist but carry no feature/agent identifier, so cost cannot be attributed per feature | Tag traces with feature/agent identifiers; expose per-feature token totals | `ADVISORY` |
+| **Scattered Hardcoded Prompts** | Behavior-carrying prompt string literals duplicated across call sites, unversioned | Prompts with business behavior become versioned artifacts/templates; changes ship with eval coverage and rollback | `ADVISORY` (first occurrence) / `BLOCKING` (if prompt versioning + eval coverage were stated requirements and the change bypasses both) |
+| **Unredacted Trace Persistence** | Eval/trace datasets or logs persist raw user content or PII without redaction | Apply the same redaction and retention rules to traces/eval data as to logs | `BLOCKING` (PII/secret exposure) / `ADVISORY` (retention hygiene) |
+
+---
+
+## 6. TDD Cheating Audit Signals (BLOCKING)
 Any violation of TDD integrity mandatorily yields a `FAIL` verdict:
 
 1. **Tautological Assertions**: `assert True`, `assertEqual(x, x)`, or assertions comparing hardcoded identical constants.

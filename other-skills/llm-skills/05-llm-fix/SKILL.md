@@ -38,6 +38,7 @@ Invoked by `00-llm-orchestrator` in defect resolution pipelines (Pipelines 4a, 4
 1. **Impact Scope Propagation**: If the root cause pattern exists across multiple prompt templates, agent tools, or output parsers (identified in blast radius), apply identical, consistent fixes to all affected modules.
 2. **Full Suite Regression Check**: Execute the entire related test suite to guarantee that fixing the defect did not break adjacent prompt chains, parsers, or vector searches.
 3. **Handoff**: Transition to `07-llm-review` (or to `06-llm-test` under Scenario A if TDD was skipped).
+4. When the fix touches concerns covered by `../03-llm-implement/references/llm-implementation-standards.md` (tracing, prompt versioning, streaming handling, caching boundaries, privacy screening), the corrected code must comply with those standards as well.
 
 ## Output Format
 Provide code diffs and a structured remediation summary:
@@ -46,7 +47,7 @@ Provide code diffs and a structured remediation summary:
 - **Multi-Site Updates**: List of additional files or prompt templates updated for consistency.
 - **Verification Evidence**: Test runner output showing targeted and regression tests passing Green.
 
-## Donts
+## Don'ts
 - **Absolute Prohibition**: Do not alter, weaken, or delete test assertions to make tests pass — all fixes must be achieved by correcting production code or prompt templates.
 - Do not apply surface patches (e.g., catching `ValidationError` and returning an empty dummy object) that mask deeper LLM instruction flaws.
 - Do not guess or attempt fixes without a verified root cause from `04-llm-bugfinder` or explicit diagnostic evidence.
