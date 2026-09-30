@@ -15,5 +15,4 @@ tests/
 transactions/
 custom-instructions/
 prompt-injection-defense/
-apk-toolkit/
 AGENTS.md
