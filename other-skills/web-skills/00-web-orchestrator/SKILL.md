@@ -1,6 +1,6 @@
 ---
 name: 00-web-orchestrator
-description: "Central orchestrator for the full-stack web development pipeline (frontend, backend, database, and app-level deployment/CI). Domain gatekeeper (rejects out-of-scope requests such as pure mobile-native or pure data science; app-related deployment is in scope, pure infrastructure is not), classifies requests (new implementation / unknown-cause bug / known-cause bug), assesses complexity and risk, identifies involved layers (frontend/backend/database/multi-tier), and routes to the appropriate child skill sequence (01-web-brainstorm, 02-web-plan, 03-web-implement, 04-web-bugfinder, 05-web-fix, 06-web-test, 07-web-review) across 6 standard scenarios. Triggers for EVERY frontend/backend/database/deployment code request before any child skill runs — this is the mandatory entrypoint, not a skill directly invoked by the user."
+description: "Central orchestrator for the full-stack web development pipeline (frontend, backend, database, and app-level deployment/CI). Domain gatekeeper (rejects out-of-scope requests such as pure mobile-native or pure data science; app-related deployment is in scope, pure infrastructure is not), classifies requests (new implementation / unknown-cause bug / known-cause bug), assesses complexity and risk, identifies involved layers (frontend/backend/database/multi-tier), and routes to the appropriate child skill sequence (01-web-brainstorm, 02-web-plan, 03-web-implement, 04-web-bugfinder, 05-web-fix, 06-web-test, 07-web-review) across 6 standard scenarios. Triggers for EVERY frontend/backend/database/deployment code request before any child skill runs — this is the mandatory entrypoint, not a skill directly invoked by the user. Also owns the mandatory harness execution log mechanism (docs/harness-logs/) for every pipeline run."
 ---
 
 # 00-web-orchestrator — Full-Stack Pipeline Orchestrator (TDD-first)
@@ -113,6 +113,15 @@ handoff:
       evidence: "Unauthenticated POST request returns 200 OK"
 ```
 
+## Harness Execution Log (Mandatory)
+Every pipeline run (Scenarios #1–#6) MUST produce a harness execution log file — in-chat YAML handoff blocks NEVER exempt or replace it.
+
+1. **Before routing to the first skill**, Read `references/execution-log.md` and follow its schema verbatim: create `docs/harness-logs/<category>_<task_name>_<yyyymmdd>_<hhmmss>.md` (timestamp from a real shell command, never guessed), creating the directory if needed.
+2. **After each child skill completes**, append its per-skill section immediately (do not batch at the end) — the orchestrator appends on behalf of the child skills.
+3. **At pipeline completion** (including FAIL outcomes and Phase 5 re-routes), append the pipeline summary section. For Phase 5 re-routes, keep the same log file and append the re-route sections — never create a second file for the same task.
+4. Log content is written in Vietnamese; skill names, file paths, commands, and status keywords (COMPLETED, FAILED, PARTIAL, PASS, FAIL) stay in English.
+5. Single-skill, read-only advisory tasks (pure explanation, ad-hoc Q&A) do not require a log.
+
 ## Don'ts
 - Do not arbitrarily bypass `04-web-bugfinder` when the bug's cause is unclear, even if the user seems in a rush.
 - Do not arbitrarily bypass `02-web-plan` when the request touches ≥2 layers or changes DB schema / API contracts, even if individual parts appear simple.
@@ -123,6 +132,8 @@ handoff:
 - Do not treat an `07-web-review` failure as pipeline completion or arbitrarily jump back to `03-web-implement`/`05-web-fix` outside the standard pipeline — must go through Phase 5 to select the appropriate 4a/4b/5/6 branch.
 - Do not auto-loop Phase 5 indefinitely when the same issue fails repeatedly — stop on the 3rd recurrence and report to the user.
 - Do not transition between critical skill boundaries without providing the structured YAML handoff block.
+- Do not run any pipeline scenario (1–6) without creating the harness execution log in `docs/harness-logs/` before the first skill runs and appending each skill section after completion — the in-chat YAML handoff never replaces the log file.
+- Do not create a second log file for the same task on Phase 5 re-routes — append to the existing one.
 
 ## Quality Checklist
 - [ ] Has the domain gate run with a clear pass/reject conclusion before routing?
@@ -133,3 +144,4 @@ handoff:
 - [ ] Are structured YAML handoff blocks populated when passing tasks between critical skill boundaries?
 - [ ] If `07-web-review` fails, is re-routing to the proper 4a/4b/5/6 branch enforced (for all original scenarios, including 4/5/6) without skipping Phase 5?
 - [ ] Is the new bug-fix branch chosen based on root cause/complexity from the `07-web-review` report itself, freshly re-evaluated rather than copying previous complexity?
+- [ ] Was the harness execution log created in `docs/harness-logs/` before the first skill ran, with one section appended per completed skill and the pipeline summary appended at the end (per `references/execution-log.md`)?
