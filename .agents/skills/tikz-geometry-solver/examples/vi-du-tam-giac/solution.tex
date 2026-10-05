@@ -1,0 +1,69 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{calc,angles,quotes,intersections,arrows.meta}
+
+\begin{document}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.1,
+    point/.style={circle,fill,inner sep=1.4pt},
+    every node/.style={font=\small}]
+  % Toạ độ từ bảng Phase 2
+  \coordinate (A) at (0,0);
+  \coordinate (B) at (5,0);
+  \coordinate (C) at (3,5.1962);
+  \coordinate (H) at (4.3548,1.6762);
+
+  % hình vẽ
+  \fill[blue!10] (A) -- (B) -- (C) -- cycle;
+  \draw[thick] (A) -- (B) -- (C) -- cycle;
+  \draw[dashed] (A) -- (H);
+
+  % dấu góc A = 60 độ
+  \pic [draw, angle radius=9mm, angle eccentricity=1.45, "$60^\circ$"] {angle = B--A--C};
+  % dấu góc vuông tại H
+  \pic [draw, angle radius=3mm] {right angle = A--H--C};
+
+  % điểm + label (chĩa ra ngoài hình)
+  \fill[point] (A) node[below left] {$A$};
+  \fill[point] (B) node[below right] {$B$};
+  \fill[point] (C) node[above] {$C$};
+  \fill[point] (H) node[right=2pt] {$H$};
+\end{tikzpicture}
+\end{center}
+
+\section*{Lời giải}
+
+\textbf{1. Tính $BC$ (định lý cosin):}
+\[
+BC^2 = AB^2 + AC^2 - 2\cdot AB\cdot AC\cdot\cos 60^\circ
+      = 25 + 36 - 2\cdot 5\cdot 6\cdot \tfrac12 = 31
+\quad\Rightarrow\quad BC = \sqrt{31} \approx 5.568.
+\]
+
+\textbf{2. Diện tích:}
+\[
+S = \tfrac12\cdot AB\cdot AC\cdot\sin 60^\circ
+  = \tfrac12\cdot 5\cdot 6\cdot \tfrac{\sqrt3}{2}
+  = \frac{15\sqrt3}{2} \approx 12.99.
+\]
+
+\textbf{3. Đường cao $AH$:}
+\[
+S = \tfrac12\cdot BC\cdot AH
+\quad\Rightarrow\quad
+AH = \frac{2S}{BC} = \frac{15\sqrt3}{\sqrt{31}} = \frac{15\sqrt{93}}{31} \approx 4.666.
+\]
+
+\textbf{Kiểm chứng bằng toạ độ:} với $A(0,0)$, $B(5,0)$, $C(3,3\sqrt3)$:
+$|BC| = \sqrt{2^2 + 27} = \sqrt{31}$ và
+$|AH| = \sqrt{\left(\tfrac{135}{31}\right)^2 + \left(\tfrac{30\sqrt3}{31}\right)^2} = \sqrt{\tfrac{675}{31}} = \tfrac{15\sqrt3}{\sqrt{31}}$ --- hai cách cho cùng kết quả.
+
+\textbf{Đáp số:} $BC = \sqrt{31} \approx 5.568$;\quad $S = \dfrac{15\sqrt3}{2} \approx 12.99$;\quad $AH = \dfrac{15\sqrt{93}}{31} \approx 4.666$.
+
+\end{document}
