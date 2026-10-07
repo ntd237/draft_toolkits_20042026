@@ -1,6 +1,6 @@
 ---
 name: ui-design-review
-description: "Review UI from screenshots through the lens of a professional UI/UX designer: overall assessment, concrete issues organized by a designer checklist (layout & alignment, typography, color & contrast, whitespace, accessibility, cross-screen consistency), and improvement suggestions prioritized P0/P1/P2. Strictly READ-ONLY — views images only, never edits code or runs commands. Triggers when the user provides UI screenshots (mobile/web/desktop) and asks for review, feedback, critique, or design assessment — keywords: ui-design-review, review UI, nhận xét UI, feedback design, đánh giá UI, review màn hình, designer review, UI critique, screenshot review."
+description: "Review UI from screenshots through the lens of a professional UI/UX designer: overall assessment, concrete issues organized by a designer checklist (layout & alignment, typography, color & contrast, whitespace, accessibility, cross-screen consistency), and improvement suggestions prioritized P0/P1/P2. Covers web responsive (breakpoint/layout issues), mobile app, and game UI on mobile and PC (HUD legibility, touch controls, screen flow). Strictly READ-ONLY — views images only, never edits code or runs commands. Triggers when the user provides UI screenshots (mobile/web/desktop/game) and asks for review, feedback, critique, or design assessment — keywords: ui-design-review, review UI, nhận xét UI, feedback design, đánh giá UI, review màn hình, designer review, UI critique, screenshot review, review web responsive, check responsive, review game UI, feedback HUD, đánh giá mobile game, review HUD game."
 ---
 
 # Skill: ui-design-review
@@ -24,9 +24,10 @@ Activates when the user provides one or more UI screenshots (mobile, web, deskto
 **Objective**: Establish exactly what is being reviewed before any judgment.
 
 1. Read every provided image. If an image fails to load or is too low-resolution to judge (text unreadable, elements blurred), say so in the report and skip detailed claims about that region.
-2. Classify each image: platform (mobile/tablet/web/desktop), screen type (onboarding, list, detail, form, empty state, dialog, settings...), and apparent state (default, loading, error).
-3. If multiple images belong to one flow, order them as a user journey. If the user gave no context (e.g., "this is a checkout screen"), infer it from the UI and state the inference explicitly in the report — do not interrogate the user for context you can reasonably infer.
-4. Note visible constraints that affect judgment: device frame vs bare screenshot, dark/light mode, locale, obvious zoom/crop.
+2. Classify each image: platform — web responsive / mobile app / mobile game / PC game (plus tablet and desktop variants) — screen type (onboarding, list, detail, form, empty state, dialog, settings, HUD, menu, pause, result...), and apparent state (default, loading, error). Platform signals: web responsive (estimated viewport/dominant breakpoint from aspect ratio, mobile-tablet-desktop layout hints, hamburger menu, sticky header/footer), mobile app (safe area/notch, home indicator, gesture bar), mobile game (HUD overlay, joystick/touch controls, thumb safe zone in portrait or landscape), PC game (mouse-keyboard HUD, tooltips, pause menu, high resolution, 16:9/21:9 aspect).
+3. Apply the platform-specific checklist groups from Phase 2 (groups 8-10) ONLY to the detected platform; static groups 1-7 always apply.
+4. If multiple images belong to one flow, order them as a user journey. If the user gave no context (e.g., "this is a checkout screen"), infer it from the UI and state the inference explicitly in the report — do not interrogate the user for context you can reasonably infer.
+5. Note visible constraints that affect judgment: device frame vs bare screenshot, dark/light mode, locale, obvious zoom/crop, portrait vs landscape.
 
 ### Phase 2 — Per-screen analysis (designer checklist)
 **Objective**: For each screen, evaluate every checklist group and collect concrete findings with locations.
@@ -40,6 +41,9 @@ Evaluate each group; record a finding only when you can point to a specific regi
 5. **Icons & imagery**: icons from one style family (no outline/filled mix), icons paired with labels when meaning is unclear, placeholder images distorted or wrong aspect ratio, image quality.
 6. **Components & states**: button style consistency (radius, padding, elevation), inputs with both placeholder and clear label, interaction states (active/selected/disabled) visible, empty/loading/error states designed rather than left blank.
 7. **Accessibility (preliminary, from the image)**: touch targets visibly smaller than ~44x44pt (mobile) / ~24x24px (web), information conveyed by color alone (no icon/text backup), smallest readable text size on the screen.
+8. **Responsive & breakpoints** (web only): content overflowing or clipped at the estimated viewport, hierarchy degradation toward the mobile layout, font sizes showing signs of relative units rather than fixed px, signs of missed breakpoints (elements overlapping, wrapped awkwardly, or squeezed into one column when the width allows more).
+9. **Game UI/UX & HUD** (mobile/PC games only): HUD occluding critical gameplay areas, text legibility over dynamic game backgrounds (outline/shadow/dimmed plate present or missing), size and position of touch controls for the thumb zone (mobile) or comfortable mouse reach (PC), critical information (HP/ammo/objective) readable in under a second, inventory/skill icons distinguishable at a glance, visible feedback for cooldown/hit/status effects.
+10. **Game screen flow** (games only, when multiple screens provided): menu → HUD → pause → result sharing a consistent visual language, onboarding/tutorial guidance clear enough to follow without external help.
 
 ### Phase 3 — Cross-screen consistency (only when ≥ 2 images)
 **Objective**: Find inconsistencies that only appear when screens are compared.
@@ -93,6 +97,8 @@ An empty corresponding section states "Không có" — never drop the structure.
 - Do not state WCAG contrast ratios as measurements — from a screenshot they are estimates; phrase them as "signs of low contrast / passes" unless trivially obvious (e.g., white text on white background).
 - Do not skip the "Điểm làm tốt" section — a one-sided review is an incomplete review.
 - Do not review code quality, logic, or data shown in the UI (e.g., whether a price is correct) — only visual design and interaction affordances.
+- Do not conclude about responsive behavior based on content not visible in the image — judge only what is shown; state the estimated viewport as an assumption.
+- Do not evaluate gameplay balance, difficulty, or game mechanics — only the UI/UX layer.
 
 ## Quality Checklist
 - [ ] Every user-provided image read and analyzed (or its unreadability explicitly stated)?
@@ -100,4 +106,6 @@ An empty corresponding section states "Không có" — never drop the structure.
 - [ ] Every finding has a P0/P1/P2 priority and a design-level suggestion (no code snippets)?
 - [ ] Report contains all sections: overall → findings → strengths → (consistency) → (missing context)?
 - [ ] No action performed beyond viewing images and writing the report (no commands, no file edits, no code reads)?
+- [ ] Platform correctly identified and the platform-specific checklist groups (8-10) applied where relevant?
+- [ ] HUD/gameplay findings judged by dynamic-background legibility criteria rather than static web criteria?
 - [ ] Report language is Vietnamese, with standard technical terms preserved in English?
