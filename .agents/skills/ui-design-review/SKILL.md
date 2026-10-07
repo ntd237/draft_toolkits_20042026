@@ -15,6 +15,7 @@ Activates when the user provides one or more UI screenshots (mobile, web, deskto
 
 ## Scope — Strictly READ-ONLY
 - The ONLY permitted input artifacts are the image files the user provides (attached directly or given as local image paths).
+- Images from public URLs may be fetched for viewing within the review only — never saved as files. Local/attached images remain the preferred input.
 - Permitted actions: view images, analyze them visually, and write the review report as chat output.
 - If the user's request includes any code change, command execution, or file modification, complete the review portion and state that code edits are outside this skill's scope — do not perform them.
 
@@ -28,19 +29,21 @@ Activates when the user provides one or more UI screenshots (mobile, web, deskto
 3. Apply the platform-specific checklist groups from Phase 2 (groups 8-10) ONLY to the detected platform; static groups 1-7 always apply.
 4. If multiple images belong to one flow, order them as a user journey. If the user gave no context (e.g., "this is a checkout screen"), infer it from the UI and state the inference explicitly in the report — do not interrogate the user for context you can reasonably infer.
 5. Note visible constraints that affect judgment: device frame vs bare screenshot, dark/light mode, locale, obvious zoom/crop, portrait vs landscape.
+6. If the user provides a design system, style guide, or component library (images or docs), use it as the comparison baseline and say so in the report; without one, consistency is judged only across the provided screens.
+7. Handle two volume/mockup caveats: when mockups contain placeholder data (lorem ipsum, stock avatars), state in the report that text-length and density judgments are estimates; with more than 8 images, group them by flow, review in batches, and merge into one consolidated report.
 
 ### Phase 2 — Per-screen analysis (designer checklist)
 **Objective**: For each screen, evaluate every checklist group and collect concrete findings with locations.
 
 Evaluate each group; record a finding only when you can point to a specific region and say why it is a problem. An empty group is a valid result — do not invent issues.
 
-1. **Layout & alignment**: margins consistent across elements, grid/rhythm consistency, spacing between related vs unrelated groups, mixed center/left alignment confusion, elements clipped at screen edges, natural visual reading flow.
-2. **Typography**: clear title/body/caption hierarchy, font sizes neither wildly divergent nor uniformly flat, sufficient line-height, overly long single lines, more than 2-3 font families, unintended text truncation or overlap.
-3. **Color & contrast**: text/background contrast (assess preliminarily against WCAG AA — 4.5:1 for normal text, 3:1 for large text; only assert when confident, otherwise phrase as "signs of low contrast"), too many accent colors diluting the primary CTA, palette consistency across the screen, enabled/disabled states visually distinguishable.
+1. **Layout & alignment**: margins consistent across elements, grid/rhythm consistency, spacing between related vs unrelated groups, mixed center/left alignment confusion, elements clipped at screen edges, content cut off mid-element by the fold or scroll (half-rendered cards, containers sliced at the edge), natural visual reading flow.
+2. **Typography**: clear title/body/caption hierarchy, font sizes neither wildly divergent nor uniformly flat, sufficient line-height, overly long single lines, more than 2-3 font families, unintended text truncation or overlap, no fixed-width slots that would break under longer localized labels (i18n text expansion).
+3. **Color & contrast**: text/background contrast (assess preliminarily against WCAG AA — 4.5:1 for normal text, 3:1 for large text; only assert when confident, otherwise phrase as "signs of low contrast"), too many accent colors diluting the primary CTA, palette consistency across the screen, enabled/disabled states visually distinguishable; in dark mode — contrast re-checked for the inverted scheme, elevation expressed via surface layers rather than cast shadows, images/icons given dark variants or adequate treatment.
 4. **Whitespace & information density**: whitespace not bunched into one region, screen neither overcrowded nor emptily purposeless, spacing-based grouping correctly reflecting element relationships.
 5. **Icons & imagery**: icons from one style family (no outline/filled mix), icons paired with labels when meaning is unclear, placeholder images distorted or wrong aspect ratio, image quality.
-6. **Components & states**: button style consistency (radius, padding, elevation), inputs with both placeholder and clear label, interaction states (active/selected/disabled) visible, empty/loading/error states designed rather than left blank.
-7. **Accessibility (preliminary, from the image)**: touch targets visibly smaller than ~44x44pt (mobile) / ~24x24px (web), information conveyed by color alone (no icon/text backup), smallest readable text size on the screen.
+6. **Components & states** — three sub-checks: (a) *input & label*: buttons consistent in style (radius, padding, elevation), inputs carrying both placeholder and clear label, interaction states (active/selected/disabled) visible; (b) *validation & error messaging*: error messages placed next to the offending field rather than only as a distant toast, paired with an icon/text so they are not color-only, inline validation present for forms, failures offering a retry path; (c) *empty/loading/error content*: empty states include a forward CTA rather than a blank void, error states offer retry, loading uses skeleton/shimmer placeholders sized to the final content, illustrations share the product's visual language.
+7. **Accessibility (preliminary, from the image)**: touch targets visibly smaller than ~44x44pt (mobile) / ~24x24px (web), adjacent action targets placed too close together (mistouch risk), information conveyed by color alone (no icon/text backup), smallest readable text size on the screen.
 8. **Responsive & breakpoints** (web only): content overflowing or clipped at the estimated viewport, hierarchy degradation toward the mobile layout, font sizes showing signs of relative units rather than fixed px, signs of missed breakpoints (elements overlapping, wrapped awkwardly, or squeezed into one column when the width allows more).
 9. **Game UI/UX & HUD** (mobile/PC games only): HUD occluding critical gameplay areas, text legibility over dynamic game backgrounds (outline/shadow/dimmed plate present or missing), size and position of touch controls for the thumb zone (mobile) or comfortable mouse reach (PC), critical information (HP/ammo/objective) readable in under a second, inventory/skill icons distinguishable at a glance, visible feedback for cooldown/hit/status effects.
 10. **Game screen flow** (games only, when multiple screens provided): menu → HUD → pause → result sharing a consistent visual language, onboarding/tutorial guidance clear enough to follow without external help.
@@ -85,7 +88,7 @@ The report is delivered in Vietnamese (per Language Protocol). Headings below ar
 [specific comparisons between screens]
 
 ## 5. Cần thêm ngữ cảnh *(if any)*
-[what could not be assessed and why]
+[what could not be assessed and why — include transitions/micro-interactions, hover/pressed states, and motion behavior that a static screenshot cannot show]
 ```
 
 An empty corresponding section states "Không có" — never drop the structure.
