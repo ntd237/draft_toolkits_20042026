@@ -1,0 +1,8 @@
+{
+  "name": "pipeline-tracker-mod",
+  "version": "1.0.0",
+  "description": "HUD pipeline and approval gate tracker for 00-orchestrator in Claude Code",
+  "author": {
+    "name": "ntd237"
+  }
+}
