@@ -31,6 +31,29 @@ function getTddColor(phase, colors) {
   return colors.tdd_none
 }
 
+function handleSkillActivation(skillName) {
+  if (!skillName) return
+
+  state.currentSkill = skillName
+
+  if (skillName === config.policy.orchestrator_skill) {
+    isIn00Pipeline = true
+  }
+
+  if (isIn00Pipeline) {
+    const mappedGate = config.policy.skill_gate_mapping[skillName]
+    state.pendingGate = mappedGate || config.policy.default_labels.no_active_gate
+
+    const mappedTdd = config.policy.skill_tdd_mapping[skillName]
+    if (mappedTdd) {
+      state.tddPhase = mappedTdd
+    }
+  } else {
+    state.tddPhase = config.policy.default_labels.no_active_tdd
+    state.pendingGate = config.policy.default_labels.no_active_gate
+  }
+}
+
 export function register(on) {
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -42,6 +65,33 @@ export function register(on) {
     return next(e)
   })
 
+  // 1. Catch user typing slash commands like /advisor or /00-orchestrator
+  on('prompt.submit', async ($, e, next) => {
+    const text = String(e?.text || '').trim()
+    if (text.startsWith('/')) {
+      const match = text.match(/^\/([a-zA-Z0-9_-]+)/)
+      if (match) {
+        const commandName = match[1]
+        if (commandName !== 'pipeline' && commandName !== 'clear' && commandName !== 'help') {
+          handleSkillActivation(commandName)
+          $.ui.invalidate('ui.render')
+        }
+      }
+    }
+    return next(e)
+  })
+
+  // 2. Catch skill prompt expansion
+  on('skill.prompt', async ($, e, next) => {
+    const skillName = String(e?.skill || e?.name || '')
+    if (skillName) {
+      handleSkillActivation(skillName)
+      $.ui.invalidate('ui.render')
+    }
+    return next(e)
+  })
+
+  // 3. Catch autonomous / orchestrator tool calls
   on('tool.call', async ($, e, next) => {
     const toolName = e.toolName || ''
     const toolInput = e.toolInput || {}
@@ -51,25 +101,7 @@ export function register(on) {
 
     if (isSkillCall && invokedSkill) {
       activeSkillStack.push(invokedSkill)
-      state.currentSkill = invokedSkill
-
-      if (invokedSkill === config.policy.orchestrator_skill) {
-        isIn00Pipeline = true
-      }
-
-      if (isIn00Pipeline) {
-        const mappedGate = config.policy.skill_gate_mapping[invokedSkill]
-        state.pendingGate = mappedGate || config.policy.default_labels.no_active_gate
-
-        const mappedTdd = config.policy.skill_tdd_mapping[invokedSkill]
-        if (mappedTdd) {
-          state.tddPhase = mappedTdd
-        }
-      } else {
-        state.tddPhase = config.policy.default_labels.no_active_tdd
-        state.pendingGate = config.policy.default_labels.no_active_gate
-      }
-
+      handleSkillActivation(invokedSkill)
       $.ui.invalidate('ui.render')
     }
 
@@ -94,15 +126,25 @@ export function register(on) {
     } finally {
       if (isSkillCall) {
         activeSkillStack.pop()
-        state.currentSkill = activeSkillStack.length > 0
-          ? activeSkillStack[activeSkillStack.length - 1]
-          : config.policy.default_labels.no_active_skill
-
+        if (activeSkillStack.length > 0) {
+          handleSkillActivation(activeSkillStack[activeSkillStack.length - 1])
+        } else {
+          state.currentSkill = config.policy.default_labels.no_active_skill
+        }
         $.ui.invalidate('ui.render')
       }
     }
 
     return result
+  })
+
+  // 4. Return Skill to None when the turn completes if no tool is running
+  on('turn.complete', async ($, e, next) => {
+    if (activeSkillStack.length === 0) {
+      state.currentSkill = config.policy.default_labels.no_active_skill
+      $.ui.invalidate('ui.render')
+    }
+    return next(e)
   })
 
   on('command.run', { command: config.command.name }, async ($, e) => {
