@@ -1,0 +1,8 @@
+{
+  "name": "prompt-enricher-mod",
+  "version": "1.0.0",
+  "description": "Always-on prompt enrichment toolbar for Claude Code",
+  "author": {
+    "name": "ntd237"
+  }
+}
