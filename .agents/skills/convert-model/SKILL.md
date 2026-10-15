@@ -3,8 +3,6 @@ name: convert-model
 description: Model conversion planning and export guidance for ML/DL models across runtimes — ONNX, TensorRT, OpenVINO, TFLite, Core ML, RKNN, Hailo, ncnn, TorchScript. Use when converting or deploying a model artifact (.pt, .pth, .onnx, .h5, SavedModel); when the user specifies a source and target format; when verifying if a target is compatible with available hardware, libraries, and machine config; or when ranking the best N conversion paths after the preferred target is blocked or suboptimal.
 ---
 
-# Skill: convert-model
-
 ## Language Protocol
 - Respond in Vietnamese. Restate non-English requests in English before proceeding.
 - Internal analysis in English; final response in Vietnamese.
