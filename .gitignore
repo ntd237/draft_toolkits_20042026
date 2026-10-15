@@ -17,3 +17,5 @@ custom-instructions/
 prompt-injection-defense/
 AGENTS.md
 tikz-solution/
+.playwright-cli/
+draft_output/
