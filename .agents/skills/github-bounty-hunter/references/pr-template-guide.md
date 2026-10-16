@@ -61,8 +61,7 @@ Many major open-source foundations (Linux Foundation, CNCF, Apache, etc.) enforc
 
 ## 3. Harness Log & Transient Artifact Exclusion Protocol
 
-When operating under autonomous engine skills (such as `goal-driven` or `00-orchestrator`), execution logs are saved to `docs/harness-logs/` for local observability. These files belong to the agent harness and must **NEVER** be committed or pushed to contributor forks or upstream repositories.
-
+When operating under autonomous engine skills (such as `goal-driven` or `00-orchestrator`), execution logs are physically initialized and saved to `docs/harness-logs/` on local disk prior to any code modification for user inspection and local auditability. These files belong strictly to the agent runtime harness and must **NEVER** be committed or pushed to contributor forks or upstream repositories.
 ### Exclusion Rules:
 1. **Local Git Exclude**:
    Add `docs/harness-logs/` to `.git/info/exclude` in the cloned target repository so it is ignored locally without altering the project's tracked `.gitignore`:

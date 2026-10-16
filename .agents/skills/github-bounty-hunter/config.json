@@ -11,6 +11,10 @@
     "autonomous_engine_skill": "goal-driven",
     "underlying_orchestrator": "00-orchestrator",
     "supported_pipelines": ["1", "2", "3", "4a", "4b", "5", "6", "7", "8"],
+    "enforce_engine_invocation": true,
+    "require_harness_log_file": true,
+    "harness_log_directory": "docs/harness-logs",
+    "harness_log_naming_pattern": "{category}_{task_name}_{timestamp}.md",
     "pipeline_mapping": {
       "small_feature_or_refactor": "Pipeline 1",
       "ambiguous_feature": "Pipeline 2",
@@ -87,6 +91,8 @@
     "require_reproduction_script": true,
     "require_regression_test": true,
     "require_ci_check_green": true,
-    "max_ci_wait_timeout_minutes": 20
+    "max_ci_wait_timeout_minutes": 20,
+    "require_harness_log_on_disk": true,
+    "verify_harness_log_excluded_from_git": true
   }
 }
