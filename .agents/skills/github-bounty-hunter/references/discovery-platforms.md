@@ -23,14 +23,13 @@ Use GitHub's search API or web interface with structured qualifiers:
   - Unauthenticated requests are throttled at 60 requests/hour (10 requests/minute for Search).
   - Configure `GITHUB_TOKEN` in the environment to unlock 5,000 requests/hour.
 
-### Algora API & Portal
-- **Endpoint**: Configured in `search_policy.algora_bounties_api_url` (`https://api.algora.io/api/bounties`)
-- **Portal**: `https://console.algora.io`
-- **Query Strategy**:
-  - Filter `status: open`
-  - Filter by target programming language (`language=typescript`)
-  - Filter by minimum reward (`min_reward_usd` in `config.json`)
-  - Verify organization reputation: Prioritize established open-source projects with active maintainers and recent commit history.
+### Algora Architecture
+- **Repository Bot**: Algora operates primarily via the `@algora-pbc` GitHub bot. Bounties are attached directly to issues with `/bounty $amount`.
+- **Portal & Organization Boards**: Bounties live under individual organization spaces (e.g. `https://algora.io/<org>/bounties`).
+- **Claim & Payout Workflow**:
+  - Contributors submit fixes with `/attempt` and PRs linking the issue.
+  - When a PR is merged, the `@algora-pbc` bot posts a direct reward claim URL on the PR/issue.
+  - Payout account setup (Stripe Express) is completed on-demand through that specific claim link. There is no standalone advance registration portal.
 
 ### Polar.sh API
 - **Endpoint**: Configured in `search_policy.polar_bounties_api_url` (`https://api.polar.sh/api/v1/issues`)
@@ -74,6 +73,6 @@ Before investing development effort, vet candidate issues across the 6-point tri
 Before attempting to solve or claim any bounty, ensure the payout pipeline is viable:
 1. **Stripe Express Readiness**: Both Algora and Polar disburse payouts via Stripe Express. Confirm the recipient GitHub account is linked to a verified Stripe Express account in a supported country.
 2. **Platform Registration**:
-   - Algora: Sign in once at `console.algora.io` using GitHub OAuth.
-   - Polar: Connect GitHub account at `polar.sh`.
+   - Algora: No advance portal setup required. Payout onboarding is triggered on-demand via the claim link posted by `@algora-pbc` when your PR is merged.
+   - Polar: Connect GitHub account at `https://polar.sh` and configure your Stripe Express payout account under the Finance tab.
 3. **Reward Floor**: Validate reward meets or exceeds `min_acceptable_reward_usd` in `config.json` to ensure return on invested development time.

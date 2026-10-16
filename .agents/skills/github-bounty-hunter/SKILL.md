@@ -118,7 +118,7 @@ flowchart TD
 ## Token & Configuration Setup
 To enable automated searches and operations, configure credentials in your environment:
 - `GITHUB_TOKEN`: GitHub Personal Access Token (scopes: `repo`, `read:org`) to prevent API rate limiting.
-- **Bounty Platform Accounts**: Ensure the GitHub account is linked to [console.algora.io](https://console.algora.io) and [polar.sh](https://polar.sh) with a verified Stripe Express payout account.
+- **Bounty Platform Verification**: For Algora, payouts are claimed per-reward via the automated bot link posted upon PR merge. For Polar, connect your GitHub account at `https://polar.sh` to configure Stripe Express payouts under Finance.
 
 ## Output Format
 Deliver structured execution reports at each milestone:

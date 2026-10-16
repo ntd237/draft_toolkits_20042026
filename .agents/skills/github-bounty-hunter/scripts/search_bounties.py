@@ -247,6 +247,13 @@ def main():
 
     config = load_config()
     token = os.environ.get("GITHUB_TOKEN")
+    if not token and shutil.which("gh"):
+        try:
+            gh_res = subprocess.run([shutil.which("gh"), "auth", "token"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+            if gh_res.returncode == 0 and gh_res.stdout.strip():
+                token = gh_res.stdout.strip()
+        except Exception:
+            pass
     min_reward = args.min_reward or config.get("search_policy", {}).get("min_reward_usd", 0)
     
     all_issues = []
