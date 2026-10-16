@@ -1,6 +1,6 @@
 # Issue Claiming Protocol & Human-in-the-Loop (HITL) Gate
 
-This guide governs communication etiquette, proposal drafting, and human authorization boundaries when claiming paid open-source issues.
+This guide governs communication etiquette, proposal drafting, human authorization boundaries, and pre-claim validations when claiming paid open-source issues.
 
 ## 1. Zero AI Spamming Policy (Mandatory)
 
@@ -8,12 +8,22 @@ Open-source maintainers face high volumes of low-effort, AI-generated spam. Viol
 
 ### Prohibited Behaviors:
 - **Never** post generic interest messages: `"I would like to work on this issue"`, `"Assign me please"`, or `"Can I take this?"`.
-- **Never** claim multiple issues simultaneously across repositories. Work on one issue at a time.
+- **Never** claim multiple issues simultaneously across repositories. Work on one issue at a time (`runtime_policy.max_concurrent_tasks = 1`).
 - **Never** trigger automated comments without prior local reproduction and human approval.
 
 ---
 
-## 2. Mandatory Human-in-the-Loop (HITL) Approval Gate
+## 2. Pre-Claim Technical & Eligibility Audit
+
+Before drafting any claim comment, verify the following prerequisites:
+1. **Local Reproduction Evidence**: Red proof captured (test failure log or minimal repro script output).
+2. **Funded Escrow Confirmation**: Bounty bot confirmed active with real escrow backing (not empty pledge).
+3. **CLA / DCO Willingness**: Check repository `CONTRIBUTING.md` for CLA or DCO requirements. Ensure ability to sign off (`git commit -s`).
+4. **Payout Route Verified**: Recipient account linked to Stripe Express via Algora or Polar console.
+
+---
+
+## 3. Mandatory Human-in-the-Loop (HITL) Approval Gate
 
 Before any comment, reaction, or bot command is dispatched to GitHub, the agent **MUST** halt and present the drafted message to the human operator for review:
 
@@ -21,7 +31,8 @@ Before any comment, reaction, or bot command is dispatched to GitHub, the agent 
 [AGENT INTERRUPT: HITL Gate - Claim Confirmation Required]
 Target Repository: owner/repo
 Issue Number: #123 (Title: ...)
-Bounty Amount: $100 (via Algora)
+Bounty Amount: $100 (via Algora - Funded)
+Reproduction Status: Confirmed Red locally
 Proposed Comment Draft:
 --------------------------------------------------
 <Drafted proposal text>
@@ -33,7 +44,7 @@ Execution proceeds ONLY upon explicit human consent.
 
 ---
 
-## 3. High-Value Claim Proposal Template
+## 4. High-Value Claim Proposal Template
 
 A valid claim proposal must demonstrate technical understanding, local reproduction, and a concrete fix plan.
 
@@ -47,7 +58,7 @@ I have reproduced this issue locally on `[OS/Environment]` using `[Runtime Versi
 - **Proposed Solution**: 
   1. Add a regression test in `[path/to/test.ext]` covering `[edge case scenario]`.
   2. Modify `[path/to/file.ext]` to properly handle `[expected logic]`.
-  3. Ensure no regressions across the existing test suite.
+  3. Ensure no regressions across the existing test suite and adhere to all contribution guidelines (DCO/CLA).
 
 May I proceed with this implementation?
 ```
@@ -59,4 +70,4 @@ May I proceed with this implementation?
   
   I have reproduced this issue locally and verified the root cause in `[file]`. Proposing fix via `[strategy]`.
   ```
-- **Polar**: If the maintainer requires assigning via comment, submit the proposal above and wait for explicit assignment.
+- **Polar**: If the maintainer requires assigning via comment, submit the proposal above and wait for explicit maintainer assignment before beginning extensive implementation.

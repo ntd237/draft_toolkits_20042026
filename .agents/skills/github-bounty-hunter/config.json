@@ -8,20 +8,40 @@
     "zero_spam_enforcement": true
   },
   "search_policy": {
+    "primary_label": "bounty",
     "default_labels": ["bounty", "algora", "polar", "help wanted"],
-    "supported_languages": ["TypeScript", "JavaScript", "Python", "Go", "Rust"],
     "max_issue_age_days": 14,
     "max_unresolved_comments": 20,
     "exclude_assigned": true,
+    "min_reward_usd": 20,
+    "require_funded_status": true,
+    "check_bounty_expiry": true,
     "github_api_base_url": "https://api.github.com",
+    "github_search_endpoint": "https://api.github.com/search/issues",
     "algora_bounties_api_url": "https://api.algora.io/api/bounties",
     "polar_bounties_api_url": "https://api.polar.sh/api/v1/issues"
+  },
+  "eligibility_policy": {
+    "require_verified_stripe_express": true,
+    "supported_payout_platforms": ["algora", "polar", "github_bounties"],
+    "min_acceptable_reward_usd": 20
   },
   "git_policy": {
     "branch_prefix": "fix/bounty-issue-",
     "commit_message_prefix": "fix: ",
     "mandatory_issue_closing_keyword": "Fixes #",
-    "enforce_clean_working_tree": true
+    "enforce_clean_working_tree": true,
+    "use_fork": true,
+    "upstream_remote_name": "upstream",
+    "origin_remote_name": "origin",
+    "require_dco_signoff": true,
+    "check_cla_requirements": true
+  },
+  "security_policy": {
+    "sandbox_isolation_mode": "isolated_directory",
+    "audit_dependencies_before_install": true,
+    "prevent_unverified_lifecycle_scripts": true,
+    "allowed_package_managers": ["npm", "pnpm", "yarn", "pip", "poetry", "cargo", "go"]
   },
   "verification_policy": {
     "baseline_test_timeout_seconds": 300,
