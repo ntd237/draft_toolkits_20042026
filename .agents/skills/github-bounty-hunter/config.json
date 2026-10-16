@@ -7,6 +7,22 @@
     "require_confirmation_before_pr": true,
     "zero_spam_enforcement": true
   },
+  "orchestration_policy": {
+    "autonomous_engine_skill": "goal-driven",
+    "underlying_orchestrator": "00-orchestrator",
+    "supported_bug_pipelines": ["4a", "4b", "5", "6"],
+    "pipeline_mapping": {
+      "unknown_cause_simple": "Pipeline 4a",
+      "unknown_cause_complex": "Pipeline 4b",
+      "known_cause_simple": "Pipeline 5",
+      "known_cause_complex": "Pipeline 6"
+    },
+    "auto_approve_intermediate_gates": true,
+    "mandatory_fixing_skill": "05-fix",
+    "prohibited_fixing_skills": ["03-implement"],
+    "enforce_tdd_order": true,
+    "require_review_pass": true
+  },
   "search_policy": {
     "primary_label": "bounty",
     "default_labels": ["bounty", "algora", "polar", "help wanted"],
@@ -35,7 +51,16 @@
     "upstream_remote_name": "upstream",
     "origin_remote_name": "origin",
     "require_dco_signoff": true,
-    "check_cla_requirements": true
+    "check_cla_requirements": true,
+    "prevent_harness_logs_push": true,
+    "excluded_paths_from_commit": [
+      "docs/harness-logs/",
+      "docs/harness-logs/**",
+      ".env",
+      "*.log",
+      "*.tmp"
+    ],
+    "verify_clean_diff_against_upstream": true
   },
   "security_policy": {
     "sandbox_isolation_mode": "isolated_directory",

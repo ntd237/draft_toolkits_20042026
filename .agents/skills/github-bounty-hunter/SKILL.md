@@ -5,7 +5,7 @@ description: "End-to-end autonomous pipeline for discovering, triaging, reproduc
 
 # GitHub Bounty Hunter Skill
 
-End-to-end workflow orchestrating the complete lifecycle of paid open-source contributions across GitHub, Algora, and Polar. Governed by operational parameters in [config.json](config.json) and guides in [references/](references/).
+End-to-end workflow orchestrating the complete lifecycle of paid open-source contributions across GitHub, Algora, and Polar. Issue resolution operates autonomously via the `goal-driven` execution engine, executing `00-orchestrator` bug-fixing pipelines (Pipelines 4a, 4b, 5, or 6) with auto-approved intermediate planning gates while preserving human-in-the-loop gates for public claim comments and pull requests. Governed by operational parameters in [config.json](config.json) and guides in [references/](references/).
 
 ## Language Protocol
 - All internal analysis, technical documentation, commit messages, and PR descriptions MUST be written in English.
@@ -20,8 +20,8 @@ Activates when the user requests finding, assessing, solving, or claiming paid G
 flowchart TD
     P1["Phase 1: Discovery, Triage & Eligibility"] --> P2["Phase 2: Sandbox Repro & Security Audit"]
     P2 --> P3["Phase 3: Claiming Protocol & HITL Gate"]
-    P3 --> P4["Phase 4: Fork Setup & TDD Implementation"]
-    P4 --> P5["Phase 5: PR Packaging & HITL Gate"]
+    P3 --> P4["Phase 4: Fork Setup & Goal-Driven Bug Engine (Pipelines 4/5/6)"]
+    P4 --> P5["Phase 5: PR Packaging, Log Exclusion & HITL Gate"]
     P5 --> P6["Phase 6: CI Monitoring & Review Iteration"]
 ```
 
@@ -58,32 +58,46 @@ flowchart TD
 1. Perform root cause analysis on the codebase to identify affected files and functions.
 2. Confirm pre-claim prerequisites: local Red proof confirmed, funded escrow verified, payout route active.
 3. Draft a structured proposal comment adhering to [references/claiming-etiquette.md](references/claiming-etiquette.md):
-   - State confirmed local reproduction, identified root cause, and concrete 3-step fix plan.
+   - State confirmed local reproduction, identified root cause, and concrete 3-step fix plan aligned with the autonomous bug execution model.
    - Attach platform-specific commands if applicable (`/attempt` for Algora).
 4. **MANDATORY HITL GATE**: Present the drafted comment to the human operator for review and approval.
    - Halt execution. Under NO circumstances post public comments, bot commands, or claim requests without explicit human sign-off.
 5. Upon operator approval, submit the comment to GitHub. Wait for maintainer assignment or proceed according to repository policy.
 
-### Phase 4: Fork Setup & Test-Driven Implementation (TDD)
-**Objective**: Configure git remotes, implement a surgical fix under strict TDD cycles, and enforce DCO/CLA compliance.
+### Phase 4: Fork Setup & Autonomous Bug Resolution via Goal-Driven Engine (Pipelines 4/5/6)
+**Objective**: Configure git remotes and resolve the issue autonomously using skill `goal-driven`, which drives `00-orchestrator` bug pipelines with auto-approved intermediate planning gates.
 
 1. Configure fork workflow per [references/pr-template-guide.md](references/pr-template-guide.md) and `git_policy`:
    - Fork upstream repository (`gh repo fork <owner>/<repo> --clone=false`).
    - Set `origin` to the contributor fork and `upstream` to the authoritative source repository.
    - Create a dedicated branch cut from the latest upstream default branch (`fix/bounty-issue-<id>-<slug>`).
-2. **Red Phase**: Formalize the reproduction script into a proper regression test located within the project's test suite. Execute test and confirm failure.
-3. **Green Phase**: Apply the minimum production code necessary to resolve the failure:
-   - Restrict edits strictly to affected modules (Surgical Changes). Do not refactor adjacent code or modify existing styles.
-4. Run project linter and formatter (`eslint`, `prettier`, `ruff`, `cargo fmt`) to ensure strict compliance with project rules.
+2. Dispatch issue resolution to autonomous engine skill `goal-driven` using the appropriate pipeline:
+   - **Pipeline 4a (Unknown-cause bug, simple)**:
+     `goal-driven` runs `04-bugfinder` -> `06-test` (Red) -> `05-fix` (Green + Refactor) -> `07-review`.
+   - **Pipeline 4b (Unknown-cause bug, complex/multi-module)**:
+     `goal-driven` runs `04-bugfinder` -> `02-plan` (auto-approves plan with logged rationale) -> [Parallel waves: `06-test` Red -> `05-fix` Green] -> `07-review`.
+   - **Pipeline 5 (Known-cause bug, simple)**:
+     `goal-driven` runs `06-test` (Red) -> `05-fix` (Green + Refactor) -> `07-review`.
+   - **Pipeline 6 (Known-cause bug, complex/architectural)**:
+     `goal-driven` runs `02-plan` (auto-approves plan with logged rationale) -> [Parallel waves: `06-test` Red -> `05-fix` Green] -> `07-review`.
+3. **Autonomous Execution Invariants**:
+   - Intermediate approval gates (brainstorm, planning, wave barriers) are auto-approved by `goal-driven` with documented rationales in the execution log, avoiding interactive pauses for the user.
+   - **Green + Refactor skill is STRICTLY `05-fix`**: Using `03-implement` for bug fixes remains strictly prohibited.
+   - Phase 4 completes only when `07-review` returns `PASS` and `<!-- GOAL_COMPLETE -->` is emitted.
+4. Run project linter and formatter (`eslint`, `prettier`, `ruff`, `cargo fmt`) to ensure strict compliance.
 5. Re-run the full test suite to guarantee zero regression across existing functionality.
 6. Commit changes adhering to `git_policy`:
    - Follow prefix format (`fix: resolve #<id> <description>`).
    - If `git_policy.require_dco_signoff` is enabled, apply `-s` flag (`Signed-off-by:`).
 
-### Phase 5: PR Packaging & Submission
-**Objective**: Package changes into a compliant Pull Request with automated issue-closing keywords, test logs, and operator authorization.
+### Phase 5: PR Packaging, Harness Log Exclusion & Submission
+**Objective**: Package changes into a compliant Pull Request while strictly ensuring no harness execution logs are committed or pushed.
 
-1. Stage modified files. Verify `git diff upstream/main...HEAD` contains no secrets, debug logs, `.env` files, or unintended whitespace modifications.
+1. **Harness Log Exclusion Gate (Mandatory)**:
+   - Execution logs generated under `docs/harness-logs/` by `goal-driven` or `00-orchestrator` are strictly local to the runtime harness.
+   - Configure local git ignore: append `docs/harness-logs/` to `.git/info/exclude`.
+   - Stage modified code and test files selectively (`git add <file1> <file2>`). NEVER run `git add .` or `git add -A`.
+   - Verify exclusion: execute `git diff --name-only upstream/main...HEAD` and confirm zero files matching `docs/harness-logs/` or `git_policy.excluded_paths_from_commit` exist in the commit history.
 2. Generate a comprehensive PR description following [references/pr-template-guide.md](references/pr-template-guide.md):
    - Include mandatory closing keyword: `Fixes #<issue_id>` or `Closes #<issue_id>`.
    - Embed test execution output, before/after evidence, and DCO confirmation.
@@ -95,10 +109,10 @@ flowchart TD
 
 1. Monitor GitHub Actions status checks (`gh pr checks --watch`).
 2. If CI fails:
-   - Retrieve failure logs immediately, reproduce the specific CI failure locally, and push an atomic fix commit with DCO sign-off.
+   - Retrieve failure logs immediately, reproduce the specific CI failure locally, and push an atomic fix commit using `05-fix` with DCO sign-off.
 3. When maintainers submit review comments:
    - Provide prompt, professional responses.
-   - Implement requested adjustments directly on the branch, re-verify tests, and notify the maintainer.
+   - Implement requested adjustments directly on the branch via `05-fix`, re-verify tests, and notify the maintainer.
 4. Once merged, verify that the bounty platform bot registers resolution and triggers payout processing.
 
 ## Token & Configuration Setup
@@ -112,6 +126,7 @@ Deliver structured execution reports at each milestone:
 ### Bounty Hunter Milestone Report: [Stage Name]
 - **Target Issue**: #[id] - [Title] ([owner/repo])
 - **Bounty Platform**: [Algora | Polar | Native] | **Reward**: [$Amount] (Escrow: Funded)
+- **Autonomous Engine**: goal-driven | **Underlying Pipeline**: [Pipeline 4a | Pipeline 4b | Pipeline 5 | Pipeline 6]
 - **Status**: [Triage | Repro | Claimed | Implementing | PR Open | Merged]
 - **Reproduction Proof**: [Summary of test verification]
 - **PR Link**: [URL] (if opened)
@@ -119,8 +134,11 @@ Deliver structured execution reports at each milestone:
 ```
 
 ## Don'ts
+- **Never use absolute paths when referencing skills `goal-driven` or `00-orchestrator`**: Always reference them by their abstract skill names or configure them via `config.json` to preserve harness independence.
+- **Never use `03-implement` for bug fixes**: All defect resolution code changes must strictly adhere to `05-fix` within the bug pipelines driven by `goal-driven`.
+- **Never commit or push harness logs**: Files in `docs/harness-logs/` must never be staged, committed, or pushed to any remote repository.
+- **Never bypass the HITL Approval Gate**: Despite autonomous execution in Phase 4 via `goal-driven`, the agent must NEVER post public claim comments (Phase 3) or submit public PRs (Phase 5) without explicit human confirmation.
 - **Never submit unsolicited, unverified PRs**: Blind PRs without local reproduction violate open-source etiquette and risk account suspension.
-- **Never bypass the HITL Approval Gate**: The agent must NEVER post comments or submit PRs autonomously without human confirmation.
 - **Never spam generic claim comments**: Messages like "Can I take this?" without technical evidence are strictly prohibited.
 - **Never expand scope**: Do not fix unrelated issues, refactor working modules, or touch dependency locks unless strictly required.
 - **Never commit credentials**: Never push `.env` files, API keys, or private tokens to remote repositories.
@@ -135,7 +153,11 @@ Deliver structured execution reports at each milestone:
 - [ ] Standalone reproduction script/test confirmed Red before applying fix?
 - [ ] Mandatory HITL approval received before posting claim comment or bot command?
 - [ ] Git fork configured with `origin` and `upstream` remotes properly separated?
-- [ ] Implementation adhered strictly to TDD (Red -> Green) with surgical diffs and DCO sign-off (`-s`)?
+- [ ] Issue resolution executed autonomously via `goal-driven` following `00-orchestrator` Pipeline 4a, 4b, 5, or 6?
+- [ ] Intermediate plan/design gates auto-approved with logged rationales by `goal-driven` without user pauses?
+- [ ] Green + Refactor phase strictly executed via `05-fix` (never `03-implement`)?
+- [ ] Skills `goal-driven` and `00-orchestrator` referenced without absolute paths?
+- [ ] All files in `docs/harness-logs/` verified excluded and completely absent from git diff?
 - [ ] PR description contains required closing keyword (`Fixes #<id>`) and test evidence?
 - [ ] Mandatory HITL approval received before opening public PR targeting upstream?
 - [ ] CI build and tests verified Green after PR submission?

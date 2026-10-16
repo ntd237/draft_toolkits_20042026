@@ -16,7 +16,7 @@ Open-source maintainers face high volumes of low-effort, AI-generated spam. Viol
 ## 2. Pre-Claim Technical & Eligibility Audit
 
 Before drafting any claim comment, verify the following prerequisites:
-1. **Local Reproduction Evidence**: Red proof captured (test failure log or minimal repro script output).
+1. **Local Reproduction Evidence**: Red proof captured (test failure log or minimal repro script output) matching `00-orchestrator` diagnostic standards.
 2. **Funded Escrow Confirmation**: Bounty bot confirmed active with real escrow backing (not empty pledge).
 3. **CLA / DCO Willingness**: Check repository `CONTRIBUTING.md` for CLA or DCO requirements. Ensure ability to sign off (`git commit -s`).
 4. **Payout Route Verified**: Recipient account linked to Stripe Express via Algora or Polar console.
@@ -33,6 +33,7 @@ Target Repository: owner/repo
 Issue Number: #123 (Title: ...)
 Bounty Amount: $100 (via Algora - Funded)
 Reproduction Status: Confirmed Red locally
+Autonomous Engine: goal-driven (Pipeline 4a / 4b / 5 / 6)
 Proposed Comment Draft:
 --------------------------------------------------
 <Drafted proposal text>
@@ -46,7 +47,7 @@ Execution proceeds ONLY upon explicit human consent.
 
 ## 4. High-Value Claim Proposal Template
 
-A valid claim proposal must demonstrate technical understanding, local reproduction, and a concrete fix plan.
+A valid claim proposal must demonstrate technical understanding, local reproduction, and a concrete fix plan adhering to the standard 3-step bug-fixing protocol (Regression Test -> Surgical Fix -> Regression Proof).
 
 ### Template:
 ```markdown
@@ -57,8 +58,8 @@ I have reproduced this issue locally on `[OS/Environment]` using `[Runtime Versi
 - **Root Cause**: The issue originates in `[path/to/file.ext]` where `[functionName]` fails to `[specific mechanism failure]`.
 - **Proposed Solution**: 
   1. Add a regression test in `[path/to/test.ext]` covering `[edge case scenario]`.
-  2. Modify `[path/to/file.ext]` to properly handle `[expected logic]`.
-  3. Ensure no regressions across the existing test suite and adhere to all contribution guidelines (DCO/CLA).
+  2. Modify `[path/to/file.ext]` to properly handle `[expected logic]` with surgical changes.
+  3. Ensure zero regressions across the existing test suite and adhere to all contribution guidelines (DCO/CLA).
 
 May I proceed with this implementation?
 ```

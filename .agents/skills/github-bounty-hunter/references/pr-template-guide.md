@@ -1,6 +1,6 @@
 # Pull Request Submission & CI Review Guide
 
-This guide specifies the structure for Pull Requests (PRs), git fork and remote orchestration, mandatory issue-linking keywords, DCO/CLA sign-off, CI monitoring procedures, and maintainer feedback handling.
+This guide specifies the structure for Pull Requests (PRs), git fork and remote orchestration, mandatory issue-linking keywords, harness log exclusion, DCO/CLA sign-off, CI monitoring procedures, and maintainer feedback handling.
 
 ## 1. Fork & Remote Management Workflow
 
@@ -58,7 +58,36 @@ Many major open-source foundations (Linux Foundation, CNCF, Apache, etc.) enforc
 
 ---
 
-## 3. Mandatory Issue-Linking Keywords
+## 3. Harness Log & Transient Artifact Exclusion Protocol
+
+When operating under autonomous engine skills (such as `goal-driven` or `00-orchestrator`), execution logs are saved to `docs/harness-logs/` for local observability. These files belong to the agent harness and must **NEVER** be committed or pushed to contributor forks or upstream repositories.
+
+### Exclusion Rules:
+1. **Local Git Exclude**:
+   Add `docs/harness-logs/` to `.git/info/exclude` in the cloned target repository so it is ignored locally without altering the project's tracked `.gitignore`:
+   ```bash
+   echo "docs/harness-logs/" >> .git/info/exclude
+   ```
+2. **Strict Selective Staging**:
+   - Only stage modified production and test files explicitly:
+     ```bash
+     git add src/affected_file.ts tests/affected_file.test.ts
+     ```
+   - **PROHIBITED**: Never run `git add .` or `git add -A`.
+3. **Pre-Push Validation Command**:
+   Before pushing, verify that no files from `docs/harness-logs/` exist in git index or commit history:
+   ```bash
+   git diff --name-only upstream/main...HEAD | grep -E "docs/harness-logs|harness-logs"
+   ```
+   If this command returns any output, halt execution and remove the files from the git index:
+   ```bash
+   git rm -r --cached docs/harness-logs/
+   git commit --amend --no-edit
+   ```
+
+---
+
+## 4. Mandatory Issue-Linking Keywords
 
 Bounty platforms (Algora, Polar) and GitHub rely on automated webhook parsers to trigger payouts upon merge. PR bodies **must** contain an explicit resolution keyword:
 
@@ -70,7 +99,7 @@ Bounty platforms (Algora, Polar) and GitHub rely on automated webhook parsers to
 
 ---
 
-## 4. Standard PR Description Template
+## 5. Standard PR Description Template
 
 ````markdown
 ## Description
@@ -91,6 +120,7 @@ Fixes #[issue_id]
 - [x] New regression test passed: `[test name]`
 - [x] Linter and code formatting verified: `[command run]`
 - [x] DCO Signed-off: `git commit -s` verified
+- [x] Harness log exclusion verified: zero telemetry committed
 
 <details>
 <summary>Test Output Logs</summary>
@@ -108,23 +138,24 @@ Fixes #[issue_id]
 
 ---
 
-## 5. Pre-Submission Quality Gate
+## 6. Pre-Submission Quality Gate
 
 Before submitting any PR:
 1. **Clean Diff Check**: Run `git diff upstream/main...HEAD` (or `upstream/master`) and confirm:
    - No commented-out code or debug prints (`console.log`, `print`, `dbg!`).
    - No unintended formatting shifts in untouched functions.
    - No accidental commits of secrets, `.env` files, or binary artifacts.
+   - Zero files from `docs/harness-logs/` in diff.
 2. **DCO Verification**: Check `git log -1 --pretty=fuller` to ensure `Signed-off-by:` line exists.
 3. **Mandatory HITL Gate**: Present the full PR title, description, and diff summary to the human operator for final authorization before pushing.
 
 ---
 
-## 6. CI Monitoring & Review Iteration Protocol
+## 7. CI Monitoring & Review Iteration Protocol
 
 1. **GitHub Actions Monitoring**:
    - Immediately after opening the PR, monitor the CI check suite (`gh pr checks` or web UI).
-   - If CI fails: Inspect logs immediately, categorize the failure (Lint, Test, TypeCheck, Build), reproduce locally, and push an atomic fix commit (`fix: resolve CI lint error`).
+   - If CI fails: Inspect logs immediately, categorize the failure (Lint, Test, TypeCheck, Build), reproduce locally, and push an atomic fix commit using `05-fix` with DCO sign-off.
 2. **Responding to Maintainer Feedback**:
    - Maintain a constructive, polite, and responsive tone.
    - Address every review comment directly. If a requested change is completed, reply with the commit hash resolving it.
