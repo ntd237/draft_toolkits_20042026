@@ -37,6 +37,7 @@
     "max_issue_age_days": 14,
     "max_unresolved_comments": 20,
     "exclude_assigned": true,
+    "exclude_issues_with_open_prs": true,
     "min_reward_usd": 20,
     "require_funded_status": true,
     "check_bounty_expiry": true,
