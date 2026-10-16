@@ -49,9 +49,8 @@ Before investing development effort, vet candidate issues across the 6-point tri
 | **Assignee State** | `assignee: none` AND no active maintainer confirmation for another user. | Assigned to another user or active work ongoing in linked PR. |
 | **Freshness** | Created within `max_issue_age_days` (default <= 14 days) or maintainer confirmed active. | > 30 days old with no maintainer response or stale debate. |
 | **Funded Escrow Status** | Algora bot confirms bounty active; Polar pledge marked `is_funded: true` with confirmed funds. | Unfunded pledge promises, zero-dollar placeholders, or revoked bounties. |
-| **Bounty Expiration** | Bounty has at least 7 days remaining before expiration or no set expiry. | Expiring within 48 hours, leaving inadequate window for review and merge. |
-| **Reproduction Clarity** | Steps to reproduce (STR) are concrete, expected vs actual behavior is clear. | Vague symptom ("doesn't work"), no environment details, no logs. |
-| **Scope Boundaries** | Atomic bug fix or well-defined standalone feature. | Broad architectural rewrites, ambiguous UI redesigns, moving targets. |
+| **Specification & Scope Clarity** | Concrete STR for bugs, or clear acceptance criteria / API contracts for features and docs. | Vague requests ("doesn't work", "make it better"), no clear boundaries, moving targets. |
+| **Scope Boundaries** | Atomic bug fix, self-contained feature, or well-scoped documentation update. | Unbounded architectural rewrites, ambiguous UI overhauls, unbounded refactors. |
 
 ---
 

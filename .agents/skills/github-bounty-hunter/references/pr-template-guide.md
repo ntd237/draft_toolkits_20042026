@@ -1,6 +1,6 @@
 # Pull Request Submission & CI Review Guide
 
-This guide specifies the structure for Pull Requests (PRs), git fork and remote orchestration, mandatory issue-linking keywords, harness log exclusion, DCO/CLA sign-off, CI monitoring procedures, and maintainer feedback handling.
+This guide specifies the structure for Pull Requests (PRs), git fork and remote orchestration across all task categories (features, bug fixes, documentation), mandatory issue-linking keywords, harness log exclusion, DCO/CLA sign-off, CI monitoring procedures, and maintainer feedback handling.
 
 ## 1. Fork & Remote Management Workflow
 
@@ -24,15 +24,16 @@ When contributing to third-party open-source projects, contributors do not posse
    ```bash
    git checkout main || git checkout master
    git pull upstream main || git pull upstream master
-   git checkout -b fix/bounty-issue-<id>-<slug>
+   # Branch prefix: fix/ for bugs, feat/ for features, docs/ for documentation
+   git checkout -b <prefix>/bounty-issue-<id>-<slug>
    ```
 4. **Push Branch to Contributor Fork**:
    ```bash
-   git push -u origin fix/bounty-issue-<id>-<slug>
+   git push -u origin <prefix>/bounty-issue-<id>-<slug>
    ```
 5. **Open PR Targeting Upstream**:
    ```bash
-   gh pr create --repo <owner>/<repo> --base main --head <contributor>:fix/bounty-issue-<id>-<slug> --title "fix: ..." --body-file pr_body.md
+   gh pr create --repo <owner>/<repo> --base main --head <contributor>:<prefix>/bounty-issue-<id>-<slug> --title "<prefix>: ..." --body-file pr_body.md
    ```
 
 ---
@@ -99,25 +100,25 @@ Bounty platforms (Algora, Polar) and GitHub rely on automated webhook parsers to
 
 ---
 
-## 5. Standard PR Description Template
+## 5. Universal PR Description Template
 
 ````markdown
 ## Description
 <!-- Provide a clear summary of the changes made -->
-This PR resolves #[issue_id] by [brief explanation of fix/feature].
+This PR resolves #[issue_id] by [brief explanation of changes].
 
 Fixes #[issue_id]
 
-## Root Cause
-[Explain what caused the issue, referencing exact files and functions]
+## Technical Rationale / Root Cause
+[Explain what motivated the change, architectural rationale, or the identified bug root cause]
 
 ## Changes Made
 - [List specific changes made]
-- Added regression test in `[test_file]` to prevent recurrence.
+- Added tests in `[test_file]` to verify functionality / prevent regression.
 
 ## Verification & Test Results
 - [x] Baseline test suite passed
-- [x] New regression test passed: `[test name]`
+- [x] New test suite verified Green: `[test name or command]`
 - [x] Linter and code formatting verified: `[command run]`
 - [x] DCO Signed-off: `git commit -s` verified
 - [x] Harness log exclusion verified: zero telemetry committed
@@ -131,7 +132,7 @@ Fixes #[issue_id]
 </details>
 
 ## Media (Required for UI / Frontend changes)
-<!-- Attach screenshot or GIF showing Before vs After behavior -->
+<!-- Attach screenshot or GIF showing Before vs After behavior if applicable -->
 - **Before**: [Image / Description]
 - **After**: [Image / Description]
 ````
@@ -155,7 +156,7 @@ Before submitting any PR:
 
 1. **GitHub Actions Monitoring**:
    - Immediately after opening the PR, monitor the CI check suite (`gh pr checks` or web UI).
-   - If CI fails: Inspect logs immediately, categorize the failure (Lint, Test, TypeCheck, Build), reproduce locally, and push an atomic fix commit using `05-fix` with DCO sign-off.
+   - If CI fails: Inspect logs immediately, categorize the failure (Lint, Test, TypeCheck, Build), reproduce locally, and push an atomic fix commit using `05-fix` (for bugs) or `03-implement` (for features) with DCO sign-off.
 2. **Responding to Maintainer Feedback**:
    - Maintain a constructive, polite, and responsive tone.
    - Address every review comment directly. If a requested change is completed, reply with the commit hash resolving it.

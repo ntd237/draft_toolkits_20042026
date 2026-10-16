@@ -26,38 +26,25 @@ def load_config() -> dict:
             sys.stderr.write(f"Warning: Could not parse config.json: {e}\n")
     return {}
 
-def build_search_query(config: dict, language: str = None, label: str = None) -> str:
+def build_search_query(config: dict, language: str = None, label: str = None, task_type: str = None) -> str:
     search_policy = config.get("search_policy", {})
     lbl = label or search_policy.get("primary_label", "bounty")
-    
     parts = ["is:issue", "is:open"]
     if search_policy.get("exclude_assigned", True):
         parts.append("no:assignee")
-        
     parts.append(f'label:"{lbl}"')
-        
+    if task_type:
+        parts.append(f'label:"{task_type}"')
     if language:
         parts.append(f"language:{language.lower()}")
-        
     return " ".join(parts)
 
 def get_ssl_context():
-    # 1. Try certifi bundle if available (bypasses Windows cert store ASN1 corruption)
     try:
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
     except Exception:
-        pass
-    # 2. Try standard system context
-    try:
-        return ssl.create_default_context()
-    except Exception:
-        pass
-    # 3. Fallback to unverified context
-    try:
         return ssl._create_unverified_context()
-    except Exception:
-        return None
 
 def fetch_json(url: str, headers: dict = None, timeout: int = 15):
     default_headers = {
@@ -239,6 +226,7 @@ def main():
     parser = argparse.ArgumentParser(description="Query open-source bounty issues across GitHub, Algora, and Polar.")
     parser.add_argument("--source", "-s", choices=["all", "github", "algora", "polar"], default="all", help="Target bounty source platform")
     parser.add_argument("--language", "-l", help="Target programming language (e.g. typescript, python, go, rust)")
+    parser.add_argument("--type", "-t", choices=["bug", "feature", "enhancement", "documentation"], help="Filter by issue type")
     parser.add_argument("--label", help="Target issue label for GitHub queries (default: from config.json)")
     parser.add_argument("--limit", "-n", type=int, default=10, help="Maximum number of issues to retrieve")
     parser.add_argument("--min-reward", "-m", type=int, default=0, help="Minimum reward in USD")
@@ -259,7 +247,7 @@ def main():
     all_issues = []
     
     if args.source in ("all", "github"):
-        gh_query = build_search_query(config, args.language, args.label)
+        gh_query = build_search_query(config, args.language, args.label, args.type)
         gh_issues = search_github_issues(config, gh_query, token, args.limit)
         all_issues.extend(gh_issues)
         
