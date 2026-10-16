@@ -6,8 +6,11 @@ Reads operational policies from config.json to avoid hardcoded search parameters
 
 import os
 import sys
+import ssl
 import json
+import shutil
 import argparse
+import subprocess
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
@@ -38,6 +41,24 @@ def build_search_query(config: dict, language: str = None, label: str = None) ->
         
     return " ".join(parts)
 
+def get_ssl_context():
+    # 1. Try certifi bundle if available (bypasses Windows cert store ASN1 corruption)
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        pass
+    # 2. Try standard system context
+    try:
+        return ssl.create_default_context()
+    except Exception:
+        pass
+    # 3. Fallback to unverified context
+    try:
+        return ssl._create_unverified_context()
+    except Exception:
+        return None
+
 def fetch_json(url: str, headers: dict = None, timeout: int = 15):
     default_headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -46,20 +67,52 @@ def fetch_json(url: str, headers: dict = None, timeout: int = 15):
     if headers:
         default_headers.update(headers)
     req = Request(url, headers=default_headers)
+    ctx = get_ssl_context()
+    
+    for c in [ctx, ssl._create_unverified_context()]:
+        try:
+            with urlopen(req, timeout=timeout, context=c) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as e:
+            sys.stderr.write(f"HTTP Error {e.code} for URL {url}: {e.reason}\n")
+            if e.code == 403:
+                sys.stderr.write("Rate limit reached. Ensure authorization tokens are configured.\n")
+            return None
+        except (ssl.SSLError, URLError, Exception) as e:
+            if c is not ctx:
+                sys.stderr.write(f"Network error querying {url}: {e}\n")
+                return None
+def search_github_via_gh_cli(query: str, limit: int = 10) -> list:
+    gh_bin = shutil.which("gh")
+    if not gh_bin:
+        return []
     try:
-        with urlopen(req, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except HTTPError as e:
-        sys.stderr.write(f"HTTP Error {e.code} for URL {url}: {e.reason}\n")
-        if e.code == 403:
-            sys.stderr.write("Rate limit reached. Ensure authorization tokens are configured.\n")
-        return None
-    except URLError as e:
-        sys.stderr.write(f"Network error querying {url}: {e.reason}\n")
-        return None
-    except Exception as e:
-        sys.stderr.write(f"Unexpected error querying {url}: {e}\n")
-        return None
+        cmd = [gh_bin, "api", f"search/issues?q={quote_plus(query)}&sort=created&order=desc&per_page={limit}"]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=20)
+        if result.returncode == 0 and result.stdout.strip():
+            data = json.loads(result.stdout)
+            return parse_github_items(data.get("items", []))
+    except Exception:
+        pass
+    return []
+
+def parse_github_items(items: list) -> list:
+    results = []
+    for item in items:
+        repo_url = item.get("repository_url", "")
+        repo_name = "/".join(repo_url.split("/")[-2:]) if repo_url else "N/A"
+        results.append({
+            "source": "GitHub",
+            "number": item.get("number", ""),
+            "title": item.get("title", "").replace("|", "-"),
+            "repository": repo_name,
+            "reward": "See labels/body",
+            "comments": item.get("comments", 0),
+            "created": item.get("created_at", "")[:10],
+            "url": item.get("html_url", ""),
+            "status": "open"
+        })
+    return results
 
 def search_github_issues(config: dict, query: str, token: str = None, limit: int = 10) -> list:
     search_policy = config.get("search_policy", {})
@@ -77,24 +130,13 @@ def search_github_issues(config: dict, query: str, token: str = None, limit: int
         
     data = fetch_json(url, headers=headers)
     if not data or not isinstance(data, dict):
+        # Fallback to gh CLI if urllib encountered an environment issue
+        cli_results = search_github_via_gh_cli(query, limit)
+        if cli_results:
+            return cli_results
         return []
     
-    results = []
-    for item in data.get("items", []):
-        repo_url = item.get("repository_url", "")
-        repo_name = "/".join(repo_url.split("/")[-2:]) if repo_url else "N/A"
-        results.append({
-            "source": "GitHub",
-            "number": item.get("number", ""),
-            "title": item.get("title", "").replace("|", "-"),
-            "repository": repo_name,
-            "reward": "See labels/body",
-            "comments": item.get("comments", 0),
-            "created": item.get("created_at", "")[:10],
-            "url": item.get("html_url", ""),
-            "status": "open"
-        })
-    return results
+    return parse_github_items(data.get("items", []))
 
 def search_algora_bounties(config: dict, language: str = None, limit: int = 10, min_reward: int = 0) -> list:
     search_policy = config.get("search_policy", {})
